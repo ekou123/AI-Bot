@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { Resizable } from "re-resizable";
 import "./App.css";
 
 const MODEL_INFO = {
@@ -156,6 +157,7 @@ export default function App() {
               + Add tab on right
             </button>
           </div>
+          
 
           <div className="total-cost-card">
             <span className="total-cost-label">Session Total</span>
@@ -165,32 +167,33 @@ export default function App() {
           </div>
         </div>
 
+        
         <div className="chat-layout">
           {bots.map((bot) => {
             const selectedModel = MODEL_INFO[bot.model];
-
             return (
+              <Resizable
+              key={bot.id}
+              defaultSize={{width: 600, height: 1000}}
+              minWidth={440}
+              maxWidth={1000}
+              enable= {{left: true, right: true, top: true, bottom: true, topLeft: true, topRight: true, bottomLeft: true, bottomRight: true}}
+              >
               <section className="chat-card" key={bot.id}>
                 <div className="topbar">
-                  <div>
-                    <p className="eyebrow">Desktop AI Assistant</p>
+                  <div className="topbar-left">
                     <h1>{bot.title}</h1>
-
-                    <div className="chat-cost-card">
-                      <span className="chat-cost-label">This chat total</span>
-                      <span className="chat-cost-value">
-                        ${bot.spent.toFixed(4)}
-                      </span>
-                    </div>
-
-                    <div className="chat-cost-card">
-                      <span className="chat-cost-label">Last message</span>
-                      <span className="chat-cost-value">
-                        ${bot.lastMessageCost.toFixed(6)}
-                      </span>
+                    <div className="topbar-meta">
+                      <div className="chat-cost-card">
+                        <span className="chat-cost-label">Chat total</span>
+                        <span className="chat-cost-value">${bot.spent.toFixed(4)}</span>
+                      </div>
+                      <div className="chat-cost-card">
+                        <span className="chat-cost-label">Last msg</span>
+                        <span className="chat-cost-value">${bot.lastMessageCost.toFixed(6)}</span>
+                      </div>
                     </div>
                   </div>
-
                   <div className="status-pill">
                     <span className="status-dot" />
                     {bot.loading ? "Thinking..." : "Ready"}
@@ -208,9 +211,6 @@ export default function App() {
                 </div>
 
                 <div className="input-section">
-                  <label htmlFor={`model-${bot.id}`} className="section-label">
-                    Model
-                  </label>
                   <select
                     id={`model-${bot.id}`}
                     className="selectAIModel"
@@ -228,36 +228,7 @@ export default function App() {
                     ))}
                   </select>
 
-                  <label htmlFor={`prompt-${bot.id}`} className="section-label">
-                    Ask something
-                  </label>
-                  <textarea
-                    id={`prompt-${bot.id}`}
-                    value={bot.prompt}
-                    onChange={(e) =>
-                      updateBot(bot.id, { prompt: e.target.value })
-                    }
-                    rows={7}
-                    placeholder="Type your message here..."
-                    className="prompt-box"
-                  />
-                </div>
-
-                <div className="actions">
-                  <button
-                    onClick={() => askBot(bot.id)}
-                    disabled={bot.loading}
-                    className="send-button"
-                  >
-                    {bot.loading ? "Thinking..." : "Send message"}
-                  </button>
-                </div>
-
-                <div className="reply-section">
-                  <div className="reply-header">
-                    <span className="section-label">Response</span>
-                  </div>
-
+                  <span className="section-label">Response</span>
                   <div className="reply-box">
                     {bot.reply ? (
                       <pre>{bot.reply}</pre>
@@ -268,7 +239,34 @@ export default function App() {
                     )}
                   </div>
                 </div>
+
+                <div className="reply-section">
+                  <div className="actions" style={{ marginTop: 0 }}>
+                    <textarea
+                      id={`prompt-${bot.id}`}
+                      value={bot.prompt}
+                      onChange={(e) =>
+                        updateBot(bot.id, { prompt: e.target.value })
+                      }
+                      placeholder="Type your message here..."
+                      className="prompt-box"
+                    />
+                  </div>
+                  <div className="actions">
+                    <button
+                      onClick={() => askBot(bot.id)}
+                      disabled={bot.loading}
+                      className="send-button"
+                    >
+                      {bot.loading ? "Thinking..." : "Send"}
+                    </button>
+                  </div>
+                </div>
+                
               </section>
+              </Resizable>
+              
+              
             );
           })}
         </div>
