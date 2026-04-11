@@ -1,0 +1,98 @@
+import { Resizable } from "re-resizable";
+import { MODEL_INFO, MODEL_OPTIONS, type ModelKey } from "../lib/models";
+import type { BotPanel } from "../lib/providers/types";
+
+type Props = {
+  bot: BotPanel;
+  onUpdate: (updates: Partial<BotPanel>) => void;
+  onAsk: () => void;
+};
+
+export function ChatCard({ bot, onUpdate, onAsk }: Props) {
+  const selectedModel = MODEL_INFO[bot.model];
+
+  return (
+    <Resizable
+      defaultSize={{ width: 400, height: 500 }}
+      minWidth={600}
+      maxWidth={1000}
+      enable={{
+        left: true, right: true, top: true, bottom: true,
+        topLeft: true, topRight: true, bottomLeft: true, bottomRight: true,
+      }}
+    >
+      <section className="chat-card">
+        <div className="topbar">
+          <div className="topbar-left">
+            <h1>{bot.title}</h1>
+            <div className="topbar-meta">
+              <div className="chat-cost-card">
+                <span className="chat-cost-label">Chat total</span>
+                <span className="chat-cost-value">${bot.spent.toFixed(4)}</span>
+              </div>
+              <div className="chat-cost-card">
+                <span className="chat-cost-label">Last msg</span>
+                <span className="chat-cost-value">${bot.lastMessageCost.toFixed(6)}</span>
+              </div>
+            </div>
+          </div>
+          <div className="status-pill">
+            <span className="status-dot" />
+            {bot.loading ? "Thinking..." : "Ready"}
+          </div>
+        </div>
+
+        <p className="subtitle">Choose a model and send a prompt.</p>
+
+        <div className="model-price-banner">
+          <div className="model-price-name">{selectedModel.label}</div>
+          <div className="model-price-details">
+            <span>Input: {selectedModel.inputPriceText}</span>
+            <span>Output: {selectedModel.outputPriceText}</span>
+          </div>
+        </div>
+
+        <div className="input-section">
+          <select
+            id={`model-${bot.id}`}
+            className="selectAIModel"
+            value={bot.model}
+            onChange={(e) => onUpdate({ model: e.target.value as ModelKey })}
+          >
+            {MODEL_OPTIONS.map((model) => (
+              <option key={model} value={model}>
+                {MODEL_INFO[model].label}
+              </option>
+            ))}
+          </select>
+
+          <span className="section-label">Response</span>
+          <div className="reply-box">
+            {bot.reply ? (
+              <pre>{bot.reply}</pre>
+            ) : (
+              <p className="placeholder-text">Your response will appear here.</p>
+            )}
+          </div>
+        </div>
+
+        <div className="reply-section">
+          <div className="actions" style={{ marginTop: 0 }}>
+            <textarea
+              id={`prompt-${bot.id}`}
+              value={bot.prompt}
+              onChange={(e) => onUpdate({ prompt: e.target.value })}
+              placeholder="Type your message here..."
+              className="prompt-box"
+            />
+          </div>
+          <div className="actions">
+            <button onClick={onAsk} disabled={bot.loading} className="send-button">
+              {bot.loading ? "Thinking..." : "Send"}
+            </button>
+          </div>
+        </div>
+      </section>
+    </Resizable>
+  );
+}
