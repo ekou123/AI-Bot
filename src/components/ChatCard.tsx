@@ -16,6 +16,8 @@ type Props = {
 export function ChatCard({ bot, onUpdate, onAsk, onFocus }: Props) {
   const selectedModel = MODEL_INFO[bot.model];
   const dragOffset = useRef({ x: 0, y: 0 });
+  const resizeStart = useRef({ x: 0, y: 0 });
+
 
   function handleMouseDown(e: React.MouseEvent<HTMLDivElement>) {
     e.preventDefault();
@@ -57,6 +59,19 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus }: Props) {
         top: bot.y,
         zIndex: bot.zIndex,
       }}
+      onResizeStart={() => {
+        resizeStart.current = {x: bot.x, y: bot.y}
+      }
+      }
+      onResize={(e, direction, ref, delta) => {
+        if (direction === "top" || direction === "topLeft" || direction === "topRight") {
+          onUpdate({ y: resizeStart.current.y - delta.height });
+        }
+        if (direction === "left" || direction === "bottomLeft" || direction === "topLeft") {
+          onUpdate({ x: resizeStart.current.x - delta.width });
+        }
+      }}
+
     >
       <section className="chat-card"
       onMouseDown={onFocus}>
