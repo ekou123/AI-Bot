@@ -101,6 +101,7 @@ body {
 
 .chat-layout {
   flex: 1;
+  position: relative;
   display: flex;
   gap: 16px;
   overflow-x: auto;
@@ -151,6 +152,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 12px 0;
   gap: 12px;
   margin-bottom: 6px;
 }

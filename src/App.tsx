@@ -9,6 +9,7 @@ export default function App() {
   const [nextId, setNextId] = useState(2);
   const [bots, setBots] = useState<BotPanel[]>([createBot(1)]);
   const [sessionTotal, setSessionTotal] = useState(0);
+  const [topZIndex, setTopZIndex] = useState(1);
 
   function addBotToRight() {
     setBots((prev) => [...prev, createBot(nextId)]);
@@ -19,6 +20,12 @@ export default function App() {
     setBots((prev) =>
       prev.map((bot) => (bot.id === id ? { ...bot, ...updates } : bot))
     );
+  }
+
+  function focusBot(id: number) {
+    const next = topZIndex + 1;
+    setTopZIndex(next);
+    updateBot(id, { zIndex: next})
   }
 
   async function askBot(id: number) {
@@ -82,6 +89,7 @@ export default function App() {
               bot={bot}
               onUpdate={(updates) => updateBot(bot.id, updates)}
               onAsk={() => askBot(bot.id)}
+              onFocus={() => focusBot(bot.id)}
             />
           ))}
         </div>

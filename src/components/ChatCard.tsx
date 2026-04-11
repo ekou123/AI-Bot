@@ -1,15 +1,46 @@
 import { Resizable } from "re-resizable";
 import { MODEL_INFO, MODEL_OPTIONS, type ModelKey } from "../lib/models";
 import type { BotPanel } from "../lib/providers/types";
+import { useState } from "react";
+import { useRef } from "react";
+
 
 type Props = {
   bot: BotPanel;
   onUpdate: (updates: Partial<BotPanel>) => void;
   onAsk: () => void;
+  onFocus: () => void;
 };
 
-export function ChatCard({ bot, onUpdate, onAsk }: Props) {
+
+export function ChatCard({ bot, onUpdate, onAsk, onFocus }: Props) {
   const selectedModel = MODEL_INFO[bot.model];
+  const dragOffset = useRef({ x: 0, y: 0 });
+
+  function handleMouseDown(e: React.MouseEvent<HTMLDivElement>) {
+    e.preventDefault();
+    onFocus();
+
+    dragOffset.current = {
+      x: e.clientX - bot.x,
+      y: e.clientY - bot.y,
+    };
+
+    function onMouseMove(moveEvent: MouseEvent) {
+      onUpdate({
+        x: moveEvent.clientX - dragOffset.current.x,
+        y: moveEvent.clientY - dragOffset.current.y,
+      });
+    }
+
+    function onMouseUp() {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    }
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  }
 
   return (
     <Resizable
@@ -20,9 +51,18 @@ export function ChatCard({ bot, onUpdate, onAsk }: Props) {
         left: true, right: true, top: true, bottom: true,
         topLeft: true, topRight: true, bottomLeft: true, bottomRight: true,
       }}
+      style={{
+        position: "absolute",
+        left: bot.x,
+        top: bot.y,
+        zIndex: bot.zIndex,
+      }}
     >
-      <section className="chat-card">
-        <div className="topbar">
+      <section className="chat-card"
+      onMouseDown={onFocus}>
+        <div className="topbar"
+        onMouseDown={handleMouseDown}>
+        
           <div className="topbar-left">
             <h1>{bot.title}</h1>
             <div className="topbar-meta">

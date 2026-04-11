@@ -22,6 +22,9 @@ export type BotPanel = {
   loading: boolean;
   spent: number;
   lastMessageCost: number;
+  x: number;
+  y: number;
+  zIndex: number;
 };
 
 export function createBot(id: number): BotPanel {
@@ -34,5 +37,8 @@ export function createBot(id: number): BotPanel {
     loading: false,
     spent: 0,
     lastMessageCost: 0,
+    x: (id-1)*30,
+    y: (id-1)*30,
+    zIndex: 0,
   };
 }
