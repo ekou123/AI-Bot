@@ -11,6 +11,8 @@ export default function App() {
   const [sessionTotal, setSessionTotal] = useState(0);
   const [topZIndex, setTopZIndex] = useState(1);
 
+  
+
   function addBotToRight() {
     setBots((prev) => [...prev, createBot(nextId)]);
     setNextId((prev) => prev + 1);
@@ -39,7 +41,8 @@ export default function App() {
     updateBot(id, { loading: true });
 
     try {
-      const result = await askAI(bot.model, bot.prompt);
+      const newMessages = [...bot.messages, {role: "user" as const, content: bot.prompt}]
+      const result = await askAI(bot.model, newMessages);
       const messageCost = calculateMessageCost(
         bot.model,
         result.usage.input_tokens,
@@ -52,7 +55,8 @@ export default function App() {
           b.id === id
             ? {
                 ...b,
-                reply: result.reply,
+                messages: [...newMessages, {role: "assistant" as const, content: result.reply}],
+                prompt: "",
                 spent: b.spent + messageCost,
                 lastMessageCost: messageCost,
               }

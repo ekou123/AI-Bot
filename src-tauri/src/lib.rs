@@ -17,7 +17,7 @@ struct UsageResult {
 }
 
 #[tauri::command]
-async fn ask_chatgpt(prompt: String, model: String) -> Result<AskAIResult, String> {
+async fn ask_chatgpt(messages: Vec<Value>, model: String) -> Result<AskAIResult, String> {
     let api_key = env::var("OPENAI_API_KEY")
         .map_err(|_| "OPENAI_API_KEY not set".to_string())?;
 
@@ -28,7 +28,7 @@ async fn ask_chatgpt(prompt: String, model: String) -> Result<AskAIResult, Strin
         .bearer_auth(api_key)
         .json(&json!({
             "model": model,
-            "input": prompt
+            "input": messages
         }))
         .send()
         .await
@@ -87,7 +87,7 @@ async fn ask_chatgpt(prompt: String, model: String) -> Result<AskAIResult, Strin
 }
 
 #[tauri::command]
-async fn ask_claude(prompt: String, model: String) -> Result<AskAIResult, String> {
+async fn ask_claude(messages: Vec<Value>, model: String) -> Result<AskAIResult, String> {
     let api_key = env::var("ANTHROPIC_API_KEY")
     .map_err(|_| "ANTHROPIC_API_KEY is not set".to_string())?
     .trim()
@@ -102,7 +102,7 @@ async fn ask_claude(prompt: String, model: String) -> Result<AskAIResult, String
         .json(&json!({
             "model": model,
             "max_tokens": 8096,
-            "messages": [{ "role": "user", "content": prompt }]
+            "messages": messages
         }))
         .send()
         .await

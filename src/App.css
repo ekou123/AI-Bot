@@ -396,6 +396,26 @@ h1 {
   font-size: 0.8rem;
 }
 
+.message {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  line-height: 1.5;
+}
+
+.message-user {
+  background: rgba(91, 124, 255, 0.15);
+  border: 1px solid rgba(91, 124, 255, 0.25);
+  margin-left: 20%;
+}
+
+.message-assistant {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-right: 20%;
+}
+
+
 @media (max-width: 700px) {
   .chat-card {
     min-width: 90vw;
@@ -422,4 +442,6 @@ h1 {
   .send-button {
     width: 100%;
   }
+
+
 }

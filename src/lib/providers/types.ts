@@ -10,7 +10,12 @@ export type AskResult = {
 }
 
 export interface AIProvider {
-    ask(backendId: string, prompt: string): Promise<AskResult>;
+    ask(backendId: string, messages: Message[]): Promise<AskResult>;
+}
+
+export type Message = {
+  role: "user" | "assistant";
+  content: string;
 }
 
 export type BotPanel = {
@@ -19,6 +24,7 @@ export type BotPanel = {
   model: ModelKey;
   prompt: string;
   reply: string;
+  messages: Message[];
   loading: boolean;
   spent: number;
   lastMessageCost: number;
@@ -34,6 +40,7 @@ export function createBot(id: number): BotPanel {
     model: "gpt-5.4-mini",
     prompt: "",
     reply: "",
+    messages: [],
     loading: false,
     spent: 0,
     lastMessageCost: 0,

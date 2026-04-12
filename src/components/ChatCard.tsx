@@ -1,8 +1,7 @@
 import { Resizable } from "re-resizable";
 import { MODEL_INFO, MODEL_OPTIONS, type ModelKey } from "../lib/models";
 import type { BotPanel } from "../lib/providers/types";
-import { useState } from "react";
-import { useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 
 type Props = {
@@ -11,14 +10,21 @@ type Props = {
   onAsk: () => void;
   onFocus: () => void;
   onDelete: () => void;
+  useEffect: () => void;
 };
+
+
 
 
 export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete }: Props) {
   const selectedModel = MODEL_INFO[bot.model];
   const dragOffset = useRef({ x: 0, y: 0 });
   const resizeStart = useRef({ x: 0, y: 0 });
+  const bottomRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+      bottomRef.current?.scrollIntoView({behavior: "smooth"});
+    }, [bot.messages])
 
   function handleMouseDown(e: React.MouseEvent<HTMLDivElement>) {
     e.preventDefault();
@@ -44,6 +50,8 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete }: Props) {
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
   }
+
+  
 
   return (
     <Resizable
@@ -125,11 +133,16 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete }: Props) {
 
           <span className="section-label">Response</span>
           <div className="reply-box">
-            {bot.reply ? (
-              <pre>{bot.reply}</pre>
-            ) : (
+            {bot.messages.length === 0 && (
               <p className="placeholder-text">Your response will appear here.</p>
             )}
+            {bot.messages.map((msg, i) => (
+              <div key={i} className={`message message-${msg.role}`}>
+                <pre>{msg.content}</pre>
+              </div>
+            ))}
+
+            <div ref={bottomRef}/>
           </div>
         </div>
 
