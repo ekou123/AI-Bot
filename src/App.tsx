@@ -28,6 +28,10 @@ export default function App() {
     updateBot(id, { zIndex: next})
   }
 
+  function deleteBot(id: number) {
+    setBots((prev) => prev.filter((bot) => bot.id !== id));
+  }
+
   async function askBot(id: number) {
     const bot = bots.find((b) => b.id === id);
     if (!bot || !bot.prompt.trim()) return;
@@ -90,6 +94,7 @@ export default function App() {
               onUpdate={(updates) => updateBot(bot.id, updates)}
               onAsk={() => askBot(bot.id)}
               onFocus={() => focusBot(bot.id)}
+              onDelete={() => deleteBot(bot.id)}
             />
           ))}
         </div>

@@ -10,10 +10,11 @@ type Props = {
   onUpdate: (updates: Partial<BotPanel>) => void;
   onAsk: () => void;
   onFocus: () => void;
+  onDelete: () => void;
 };
 
 
-export function ChatCard({ bot, onUpdate, onAsk, onFocus }: Props) {
+export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete }: Props) {
   const selectedModel = MODEL_INFO[bot.model];
   const dragOffset = useRef({ x: 0, y: 0 });
   const resizeStart = useRef({ x: 0, y: 0 });
@@ -73,12 +74,13 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus }: Props) {
       }}
 
     >
-      <section className="chat-card"
+      <section className="chat-card" 
       onMouseDown={onFocus}>
+        
         <div className="topbar"
         onMouseDown={handleMouseDown}>
-        
           <div className="topbar-left">
+            <button onClick={onDelete} className="delete-button">Delete</button>
             <h1>{bot.title}</h1>
             <div className="topbar-meta">
               <div className="chat-cost-card">

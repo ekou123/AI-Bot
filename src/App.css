@@ -29,14 +29,12 @@ body {
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .workspace {
   flex: 1;
   width: 100%;
-  max-width: 1600px;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -102,11 +100,8 @@ body {
 .chat-layout {
   flex: 1;
   position: relative;
-  display: flex;
-  gap: 16px;
-  overflow-x: auto;
-  overflow-y: hidden;
   min-height: 0;
+  overflow: visible;
 }
 
 .chat-card {
@@ -125,6 +120,21 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.delete-button {
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  color: #93a4c3;
+  border-radius: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.delete-button:hover {
+  background: rgba(255, 80, 80, 0.2);
+  color: #ff6b6b;
 }
 
 .chat-cost-card {
