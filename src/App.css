@@ -32,6 +32,26 @@ body {
   overflow: visible;
 }
 
+.app-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.sidebar {
+  width: 0;
+  overflow: hidden;
+  transition: width 0.25s ease;
+  background: rgba(10, 15, 30, 0.9);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.sidebar-open {
+  width: 260px;
+}
+
 .workspace {
   flex: 1;
   width: 100%;
@@ -64,6 +84,32 @@ body {
 
 .add-tab-button:hover {
   transform: translateY(-1px);
+}
+
+.history-group {
+  padding: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.history-group-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #93a4c3;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.history-item {
+  font-size: 0.78rem;
+  color: #b6c2d9;
+  padding: 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-item-user {
+  color: #8ab4ff;
 }
 
 .workspace-header {

@@ -1,7 +1,7 @@
 import { Resizable } from "re-resizable";
 import { MODEL_INFO, MODEL_OPTIONS, type ModelKey } from "../lib/models";
 import type { BotPanel } from "../lib/providers/types";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 
 
 type Props = {
@@ -10,7 +10,7 @@ type Props = {
   onAsk: () => void;
   onFocus: () => void;
   onDelete: () => void;
-  useEffect: () => void;
+  //useEffect: () => void;
 };
 
 
@@ -21,10 +21,11 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete }: Props) {
   const dragOffset = useRef({ x: 0, y: 0 });
   const resizeStart = useRef({ x: 0, y: 0 });
   const bottomRef = useRef<HTMLDivElement>(null);
+  
 
-  useEffect(() => {
-      bottomRef.current?.scrollIntoView({behavior: "smooth"});
-    }, [bot.messages])
+  // useEffect(() => {
+  //     bottomRef.current?.scrollIntoView({behavior: "smooth"});
+  //   }, [bot.messages])
 
   function handleMouseDown(e: React.MouseEvent<HTMLDivElement>) {
     e.preventDefault();
@@ -82,6 +83,7 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete }: Props) {
       }}
 
     >
+
       <section className="chat-card" 
       onMouseDown={onFocus}>
         
@@ -123,6 +125,12 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete }: Props) {
             className="selectAIModel"
             value={bot.model}
             onChange={(e) => onUpdate({ model: e.target.value as ModelKey })}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && e.ctrlKey) {
+                e.preventDefault();
+                onAsk();
+              }
+            }}
           >
             {MODEL_OPTIONS.map((model) => (
               <option key={model} value={model}>

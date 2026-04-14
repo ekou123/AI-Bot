@@ -18,6 +18,13 @@ export type Message = {
   content: string;
 }
 
+export type SavedChat = {
+  id: number;
+  title: string;
+  model: ModelKey;
+  messages: Message[];
+};
+
 export type BotPanel = {
   id: number;
   title: string;

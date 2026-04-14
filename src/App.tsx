@@ -1,17 +1,17 @@
 import { useState } from "react";
 import { ChatCard } from "./components/ChatCard";
 import { calculateMessageCost } from "./lib/pricing";
-import { createBot, type BotPanel } from "./lib/providers/types";
+import { createBot, type SavedChat, type BotPanel } from "./lib/providers/types";
 import { askAI } from "./lib/providers"
 import "./App.css";
 
 export default function App() {
   const [nextId, setNextId] = useState(2);
   const [bots, setBots] = useState<BotPanel[]>([createBot(1)]);
+  const [savedChats, setSavedChats] = useState<SavedChat[]>([]);
   const [sessionTotal, setSessionTotal] = useState(0);
   const [topZIndex, setTopZIndex] = useState(1);
-
-  
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   function addBotToRight() {
     setBots((prev) => [...prev, createBot(nextId)]);
@@ -27,11 +27,23 @@ export default function App() {
   function focusBot(id: number) {
     const next = topZIndex + 1;
     setTopZIndex(next);
-    updateBot(id, { zIndex: next})
+    updateBot(id, { zIndex: next });
   }
 
   function deleteBot(id: number) {
-    setBots((prev) => prev.filter((bot) => bot.id !== id));
+    const bot = bots.find((b) => b.id === id);
+    setBots((prev) => prev.filter((b) => b.id !== id));
+  }
+
+  function reopenChat(chat: SavedChat) {
+    const newBot: BotPanel = {
+      ...createBot(nextId),
+      title: chat.title,
+      model: chat.model,
+      messages: chat.messages,
+    };
+    setBots((prev) => [...prev, newBot]);
+    setNextId((prev) => prev + 1);
   }
 
   async function askBot(id: number) {
@@ -41,7 +53,7 @@ export default function App() {
     updateBot(id, { loading: true });
 
     try {
-      const newMessages = [...bot.messages, {role: "user" as const, content: bot.prompt}]
+      const newMessages = [...bot.messages, { role: "user" as const, content: bot.prompt }];
       const result = await askAI(bot.model, newMessages);
       const messageCost = calculateMessageCost(
         bot.model,
@@ -55,7 +67,7 @@ export default function App() {
           b.id === id
             ? {
                 ...b,
-                messages: [...newMessages, {role: "assistant" as const, content: result.reply}],
+                messages: [...newMessages, { role: "assistant" as const, content: result.reply }],
                 prompt: "",
                 spent: b.spent + messageCost,
                 lastMessageCost: messageCost,
@@ -63,6 +75,32 @@ export default function App() {
             : b
         )
       );
+
+      if (bot.messages.length === 0) {
+        const titleResult = await askAI(bot.model, [
+          { role: "user", content: `Summarise this conversation topic in 5 words or less: "${bot.prompt}"` }
+        ]);
+        updateBot(id, { title: titleResult.reply.trim() });
+      }
+
+      setSavedChats((prev) => {
+        const existing = prev.findIndex((c) => c.id === id);
+        const updatedChat: SavedChat = {
+          id,
+          title: bot.title,
+          model: bot.model,
+          messages: [...newMessages, { role: "assistant" as const, content: result.reply }],
+        }
+
+        if (existing != -1) {
+          const updated = [...prev]
+          updated[existing] = updatedChat;
+          return updated;
+        }
+
+        return [...prev, updatedChat]
+      })
+
       setSessionTotal((prev) => prev + messageCost);
     } catch (err) {
       updateBot(id, { reply: JSON.stringify(err) });
@@ -76,31 +114,47 @@ export default function App() {
       <div className="background-glow glow-1" />
       <div className="background-glow glow-2" />
 
-      <div className="workspace">
-        <div className="workspace-header">
-          <div className="tabs-bar">
-            <button className="add-tab-button" onClick={addBotToRight}>
-              + Add tab on right
-            </button>
-          </div>
-
-          <div className="total-cost-card">
-            <span className="total-cost-label">Session Total</span>
-            <span className="total-cost-value">${sessionTotal.toFixed(2)}</span>
+      <div className="app-body">
+        <div className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
+          <div className="sidebar-content">
+            {savedChats.map((chat) => (
+              <div key={chat.id} className="history-group" onClick={() => reopenChat(chat)} style={{ cursor: "pointer" }}>
+                <span className="history-group-title">{chat.title}</span>
+                <span className="history-item">{chat.messages.length} messages</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="chat-layout">
-          {bots.map((bot) => (
-            <ChatCard
-              key={bot.id}
-              bot={bot}
-              onUpdate={(updates) => updateBot(bot.id, updates)}
-              onAsk={() => askBot(bot.id)}
-              onFocus={() => focusBot(bot.id)}
-              onDelete={() => deleteBot(bot.id)}
-            />
-          ))}
+        <div className="workspace">
+          <div className="workspace-header">
+            <div className="tabs-bar">
+              <button className="add-tab-button" onClick={() => setSidebarOpen(prev => !prev)}>
+                ☰ History
+              </button>
+              <button className="add-tab-button" onClick={addBotToRight}>
+                + Add tab on right
+              </button>
+            </div>
+
+            <div className="total-cost-card">
+              <span className="total-cost-label">Session Total</span>
+              <span className="total-cost-value">${sessionTotal.toFixed(2)}</span>
+            </div>
+          </div>
+
+          <div className="chat-layout">
+            {bots.map((bot) => (
+              <ChatCard
+                key={bot.id}
+                bot={bot}
+                onUpdate={(updates) => updateBot(bot.id, updates)}
+                onAsk={() => askBot(bot.id)}
+                onFocus={() => focusBot(bot.id)}
+                onDelete={() => deleteBot(bot.id)}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>
