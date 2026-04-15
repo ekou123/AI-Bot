@@ -38,6 +38,7 @@ export default function App() {
   function reopenChat(chat: SavedChat) {
     const newBot: BotPanel = {
       ...createBot(nextId),
+      id: chat.id,
       title: chat.title,
       model: chat.model,
       messages: chat.messages,
@@ -76,10 +77,12 @@ export default function App() {
         )
       );
 
+      let chatTitle = bot.title;
       if (bot.messages.length === 0) {
         const titleResult = await askAI(bot.model, [
           { role: "user", content: `Summarise this conversation topic in 5 words or less: "${bot.prompt}"` }
         ]);
+        chatTitle = titleResult.reply.trim();
         updateBot(id, { title: titleResult.reply.trim() });
       }
 
@@ -92,7 +95,7 @@ export default function App() {
           messages: [...newMessages, { role: "assistant" as const, content: result.reply }],
         }
 
-        if (existing != -1) {
+        if (existing !== -1) {
           const updated = [...prev]
           updated[existing] = updatedChat;
           return updated;
