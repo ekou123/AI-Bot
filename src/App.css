@@ -59,7 +59,6 @@ body {
   flex-direction: column;
   overflow: hidden;
   position: relative;
-  z-index: 1;
   min-height: 0;
 }
 
@@ -461,6 +460,81 @@ h1 {
   margin-right: 20%;
 }
 
+
+/* Standalone chat window */
+.chat-window-root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.chat-window-header {
+  flex-shrink: 0;
+}
+
+.chat-window-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.chat-window-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-window-meta {
+  display: flex;
+  gap: 12px;
+}
+
+.chat-window-messages {
+  flex: 1;
+  overflow-y: auto;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 12px;
+  min-height: 0;
+}
+
+.chat-window-input {
+  flex-shrink: 0;
+}
+
+.chat-window-input .prompt-box {
+  min-height: 70px;
+}
+
+/* Launcher empty state */
+.launcher-empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #8ea0c0;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.launcher-empty-state p {
+  margin: 0;
+}
+
+.launcher-empty-state strong {
+  color: #f5f7fb;
+}
 
 @media (max-width: 700px) {
   .chat-card {

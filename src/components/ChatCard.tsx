@@ -10,13 +10,13 @@ type Props = {
   onAsk: () => void;
   onFocus: () => void;
   onDelete: () => void;
-  //useEffect: () => void;
+  onPopOut: () => void;
 };
 
 
 
 
-export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete }: Props) {
+export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut }: Props) {
   const selectedModel = MODEL_INFO[bot.model];
   const dragOffset = useRef({ x: 0, y: 0 });
   const resizeStart = useRef({ x: 0, y: 0 });
@@ -64,7 +64,7 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete }: Props) {
         topLeft: true, topRight: true, bottomLeft: true, bottomRight: true,
       }}
       style={{
-        position: "absolute",
+        position: "fixed",
         left: bot.x,
         top: bot.y,
         zIndex: bot.zIndex,
@@ -91,6 +91,7 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete }: Props) {
         onMouseDown={handleMouseDown}>
           <div className="topbar-left">
             <button onClick={onDelete} className="delete-button">Delete</button>
+            <button onClick={onPopOut} className="delete-button">Pop out</button>
             <h1>{bot.title}</h1>
             <div className="topbar-meta">
               <div className="chat-cost-card">
