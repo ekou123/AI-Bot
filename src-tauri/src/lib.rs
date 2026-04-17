@@ -18,8 +18,7 @@ struct UsageResult {
 
 #[tauri::command]
 async fn ask_chatgpt(messages: Vec<Value>, model: String) -> Result<AskAIResult, String> {
-    let api_key = env::var("OPENAI_API_KEY")
-        .map_err(|_| "OPENAI_API_KEY not set".to_string())?;
+    let api_key = env::var("OPENAI_API_KEY").map_err(|_| "OPENAI_API_KEY not set".to_string())?;
 
     let client = Client::new();
 
@@ -89,9 +88,9 @@ async fn ask_chatgpt(messages: Vec<Value>, model: String) -> Result<AskAIResult,
 #[tauri::command]
 async fn ask_claude(messages: Vec<Value>, model: String) -> Result<AskAIResult, String> {
     let api_key = env::var("ANTHROPIC_API_KEY")
-    .map_err(|_| "ANTHROPIC_API_KEY is not set".to_string())?
-    .trim()
-    .to_string();
+        .map_err(|_| "ANTHROPIC_API_KEY is not set".to_string())?
+        .trim()
+        .to_string();
 
     let client = Client::new();
 
@@ -159,7 +158,9 @@ async fn ask_claude(messages: Vec<Value>, model: String) -> Result<AskAIResult, 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_sql::Builder::new().build())
         .invoke_handler(tauri::generate_handler![ask_chatgpt, ask_claude])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+
 }

@@ -7,6 +7,9 @@ import type { ChatUpdatePayload } from "./ChatWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen, emit } from "@tauri-apps/api/event";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import Database from "@tauri-apps/plugin-sql";
+import { getDB, setupDB } from "./db";
+import { ModelKey } from "./lib/models";
 
 export default function App() {
   const [nextId, setNextId] = useState(2);
@@ -20,7 +23,17 @@ export default function App() {
   // Holds init state for chats being reopened as windows, keyed by window label
   const pendingInits = useRef<Map<string, SavedChat>>(new Map());
 
+
+
   useEffect(() => {
+    setupDB().then(async (db) => {
+    const rows = await db.select<{ id: number; title: string; model: string; messages: string }[]>(
+      "SELECT * FROM chats ORDER BY updated_at DESC"
+    );
+    console.log("Loaded rows:", rows); // add this
+    setSavedChats(rows.map(r => ({ ...r, model: r.model as ModelKey, messages: JSON.parse(r.messages) })));
+    });
+
     // When a popped-out window signals ready, send it its initial state
     const unlistenReady = listen<{ label: string }>("chat:ready", (event) => {
       const { label } = event.payload;
@@ -49,6 +62,14 @@ export default function App() {
     const unlistenUpdate = listen<ChatUpdatePayload>("chat:update", (event) => {
       const { id, title, model, messages } = event.payload;
       setSavedChats(prev => {
+        getDB().execute(
+      `INSERT INTO chats (id, title, model, messages, updated_at)
+      VALUES ($1, $2, $3, $4, unixepoch())
+      ON CONFLICT(id) DO UPDATE SET title=$2, model=$3, messages=$4, updated_at=unixepoch()`,
+      [id, title, model, JSON.stringify(messages)]
+    );
+
+
         const existing = prev.findIndex(c => c.id === id);
         const updated: SavedChat = { id, title, model, messages };
         if (existing !== -1) {
@@ -136,6 +157,19 @@ export default function App() {
         }
         return [...prev, updatedChat];
       });
+
+      try {
+      const db = getDB();
+      await db.execute(
+        `INSERT INTO chats (id, title, model, messages, updated_at)
+        VALUES ($1, $2, $3, $4, unixepoch())
+        ON CONFLICT(id) DO UPDATE SET title=$2, model=$3, messages=$4, updated_at=unixepoch()`,
+        [id, chatTitle, bot.model, JSON.stringify([...newMessages, { role: "assistant", content: result.reply }])]
+      );
+      console.log("Saved chat", id);
+    } catch (dbErr) {
+      console.error("DB save failed:", dbErr);
+    }
 
       setSessionTotal(prev => prev + messageCost);
     } catch (err) {
