@@ -36,15 +36,13 @@ export default function App() {
       }
     });
 
-    // Re-embed a popped-out window back as a card, then close the window
-    const unlistenPopIn = listen<ChatUpdatePayload>("chat:popin", async (event) => {
+    // Re-embed a popped-out window back as a card (window closes itself)
+    const unlistenPopIn = listen<ChatUpdatePayload>("chat:popin", (event) => {
       const { id, title, model, messages } = event.payload;
       setBots(prev => {
         if (prev.some(b => b.id === id)) return prev;
         return [...prev, { ...createBot(id), title, model, messages }];
       });
-      const win = await WebviewWindow.getByLabel(`chat-${id}`);
-      win?.close();
     });
 
     // Keep history in sync when a standalone window sends a message
@@ -174,10 +172,13 @@ export default function App() {
     });
   }
 
-  // Open a history chat in an embedded card (no-op if already open anywhere)
+  // Open a history chat in an embedded card, or focus it if already open
   async function reopenChat(chat: SavedChat) {
-    // Already open as an embedded card — do nothing
-    if (bots.some(b => b.id === chat.id)) return;
+    // Already open as an embedded card — bring it to front
+    if (bots.some(b => b.id === chat.id)) {
+      focusBot(chat.id);
+      return;
+    }
 
     // Already open as a standalone window — just focus it
     const win = await WebviewWindow.getByLabel(`chat-${chat.id}`);
@@ -187,14 +188,13 @@ export default function App() {
     }
 
     const newBot: BotPanel = {
-      ...createBot(nextId),
+      ...createBot(chat.id),
       id: chat.id,
       title: chat.title,
       model: chat.model,
       messages: chat.messages,
     };
     setBots(prev => [...prev, newBot]);
-    setNextId(prev => prev + 1);
   }
 
   async function togglePin() {
@@ -211,17 +211,26 @@ export default function App() {
       <div className="app-body">
         <div className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
           <div className="sidebar-content">
-            {savedChats.filter(chat => !bots.some(b => b.id === chat.id)).map((chat) => (
-              <div
-                key={chat.id}
-                className="history-group"
-                onClick={() => reopenChat(chat)}
-                style={{ cursor: "pointer" }}
-              >
-                <span className="history-group-title">{chat.title}</span>
-                <span className="history-item">{chat.messages.length} messages</span>
-              </div>
-            ))}
+            {savedChats.length === 0 && (
+              <div className="history-empty">No chats yet. Send a message to save history.</div>
+            )}
+            {savedChats.map((chat) => {
+              const isOpenCard = bots.some(b => b.id === chat.id);
+              return (
+                <div
+                  key={chat.id}
+                  className={`history-group${isOpenCard ? " history-group-open" : ""}`}
+                  onClick={() => reopenChat(chat)}
+                  style={{ cursor: "pointer" }}
+                >
+                  <div className="history-group-header">
+                    <span className="history-group-title">{chat.title}</span>
+                    {isOpenCard && <span className="history-open-badge">open</span>}
+                  </div>
+                  <span className="history-item">{chat.messages.length} messages</span>
+                </div>
+              );
+            })}
           </div>
         </div>
 

@@ -109,14 +109,16 @@ export function ChatWindow() {
     }
   }
 
-  function popBack() {
-    emit("chat:popin", {
+  async function popBack() {
+    
+    await emit("chat:popin", {
       id: chatIdRef.current,
       title: titleRef.current,
       model,
       messages: messagesRef.current,
     });
-    // Main window closes this window once it receives the event
+    
+    await getCurrentWindow().close();
   }
 
   const selectedModel = MODEL_INFO[model];
