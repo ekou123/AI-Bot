@@ -134,7 +134,7 @@ export default function App() {
       } : b));
 
       let chatTitle = bot.title;
-      if (bot.messages.length === 0) {
+      if (bot.messages.length === 0 && bot.title === `Bot ${id}`) {
         const titleResult = await askAI(bot.model, [
           { role: "user", content: `Summarise this conversation topic in 5 words or less: "${bot.prompt}"` }
         ]);
@@ -206,9 +206,16 @@ export default function App() {
     });
   }
 
-  function renameBot(id: number) {
+  function renameBot(id: number, newTitle: string) {
     const bot = bots.find(b => b.id === id);
     if (!bot) return;
+
+    updateBot(id, {title: newTitle});
+    setSavedChats(prev => prev.map(c => c.id === id ? {...c, title: newTitle} : c));
+    getDB().execute("UPDATE chats SET title=$1, updated_at=unixepoch() WHERE id=$2", [newTitle, id]);
+
+
+
 
     
   }
@@ -310,6 +317,7 @@ export default function App() {
           onFocus={() => focusBot(bot.id)}
           onDelete={() => deleteBot(bot.id)}
           onPopOut={() => popOutBot(bot.id)}
+          onRename={(newTitle) => renameBot(bot.id, newTitle)}
         />
       ))}
     </div>

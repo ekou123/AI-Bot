@@ -11,7 +11,7 @@ type Props = {
   onFocus: () => void;
   onDelete: () => void;
   onPopOut: () => void;
-  onRename: () => void;
+  onRename: (newTitle: string) => void;
 };
 
 
@@ -58,7 +58,9 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, on
   function commitRename() {
       const newName = renameRef.current?.value;
 
-      onUpdate({title: newName})
+      if (!newName?.trim()) return;
+
+      onRename(newName)
 
       setIsRenaming(false)
     }
