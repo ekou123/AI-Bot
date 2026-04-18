@@ -206,6 +206,13 @@ export default function App() {
     });
   }
 
+  function renameBot(id: number) {
+    const bot = bots.find(b => b.id === id);
+    if (!bot) return;
+
+    
+  }
+
   // Open a history chat in an embedded card, or focus it if already open
   async function reopenChat(chat: SavedChat) {
     // Already open as an embedded card — bring it to front

@@ -11,16 +11,19 @@ type Props = {
   onFocus: () => void;
   onDelete: () => void;
   onPopOut: () => void;
+  onRename: () => void;
 };
 
 
 
 
-export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut }: Props) {
+export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, onRename }: Props) {
   const selectedModel = MODEL_INFO[bot.model];
   const dragOffset = useRef({ x: 0, y: 0 });
   const resizeStart = useRef({ x: 0, y: 0 });
   const bottomRef = useRef<HTMLDivElement>(null);
+  const renameRef = useRef<HTMLInputElement>(null);
+  const [isRenaming, setIsRenaming] = useState(false);
   
 
   // useEffect(() => {
@@ -51,6 +54,14 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut }: 
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
   }
+
+  function commitRename() {
+      const newName = renameRef.current?.value;
+
+      onUpdate({title: newName})
+
+      setIsRenaming(false)
+    }
 
   
 
@@ -92,7 +103,16 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut }: 
           <div className="topbar-left">
             <button onClick={onDelete} className="delete-button">Delete</button>
             <button onClick={onPopOut} className="delete-button">Pop out</button>
-            <h1>{bot.title}</h1>
+            {isRenaming
+            ? <input defaultValue={bot.title} autoFocus ref={renameRef}
+            onBlur={commitRename}
+            onKeyDown={(e) => 
+              {if (e.key === "Enter") commitRename()}}>
+              </input>
+            : <h1>{bot.title}</h1>
+            }
+            <button onClick={() => setIsRenaming(true)} className="delete-button"
+            >✎</button>
             <div className="topbar-meta">
               <div className="chat-cost-card">
                 <span className="chat-cost-label">Chat total</span>
