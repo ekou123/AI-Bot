@@ -96,6 +96,16 @@ body {
   transition: background 0.15s ease;
 }
 
+.history-heading-box {
+  padding: 16px 12px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #93a4c3;
+}
+
 .history-group:hover {
   background: rgba(255, 255, 255, 0.04);
 }
