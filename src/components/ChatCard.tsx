@@ -24,7 +24,7 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, on
   const bottomRef = useRef<HTMLDivElement>(null);
   const renameRef = useRef<HTMLInputElement>(null);
   const [isRenaming, setIsRenaming] = useState(false);
-  
+
 
   // useEffect(() => {
   //     bottomRef.current?.scrollIntoView({behavior: "smooth"});
@@ -56,16 +56,16 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, on
   }
 
   function commitRename() {
-      const newName = renameRef.current?.value;
+    const newName = renameRef.current?.value;
 
-      if (!newName?.trim()) return;
+    if (!newName?.trim()) return;
 
-      onRename(newName)
+    onRename(newName)
 
-      setIsRenaming(false)
-    }
+    setIsRenaming(false)
+  }
 
-  
+
 
   return (
     <Resizable
@@ -83,7 +83,7 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, on
         zIndex: bot.zIndex,
       }}
       onResizeStart={() => {
-        resizeStart.current = {x: bot.x, y: bot.y}
+        resizeStart.current = { x: bot.x, y: bot.y }
       }
       }
       onResize={(e, direction, ref, delta) => {
@@ -97,21 +97,20 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, on
 
     >
 
-      <section className="chat-card" 
-      onMouseDown={onFocus}>
-        
+      <section className="chat-card"
+        onMouseDown={onFocus}>
+
         <div className="topbar"
-        onMouseDown={handleMouseDown}>
+          onMouseDown={handleMouseDown}>
           <div className="topbar-left">
             <button onClick={onDelete} className="delete-button">Delete</button>
             <button onClick={onPopOut} className="delete-button">Pop out</button>
             {isRenaming
-            ? <input defaultValue={bot.title} autoFocus ref={renameRef}
-            onBlur={commitRename}
-            onKeyDown={(e) => 
-              {if (e.key === "Enter") commitRename()}}>
+              ? <input defaultValue={bot.title} autoFocus ref={renameRef}
+                onBlur={commitRename}
+                onKeyDown={(e) => { if (e.key === "Enter") commitRename() }}>
               </input>
-            : <h1>{bot.title}</h1>
+              : <h1>{bot.title}</h1>
             }
             <button onClick={() => setIsRenaming(true)} className="delete-button"
             >✎</button>
@@ -173,7 +172,7 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, on
               </div>
             ))}
 
-            <div ref={bottomRef}/>
+            <div ref={bottomRef} />
           </div>
         </div>
 

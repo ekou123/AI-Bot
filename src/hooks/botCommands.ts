@@ -102,8 +102,8 @@ export function useBots(
 
   function renameBot(id: number, newTitle: string) {
     const bot = bots.find(b => b.id === id);
-    if (!bot) return;
-    updateBot(id, { title: newTitle });
+    if (bot) updateBot(id, { title: newTitle });
+    
     setSavedChats(prev => prev.map(c => c.id === id ? { ...c, title: newTitle } : c));
     getDB().execute("UPDATE chats SET title=$1, updated_at=unixepoch() WHERE id=$2", [newTitle, id]);
   }

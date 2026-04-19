@@ -26,6 +26,11 @@ export function ChatWindow() {
   const messagesRef = useRef<Message[]>([]);
   const titleRef = useRef("New Chat");
 
+  const [isRenaming, setIsRenaming] = useState(false);
+  const renameRef = useRef<HTMLInputElement>(null);
+
+
+
   useEffect(() => {
     const label = getCurrentWindow().label; // e.g. "chat-3"
     const id = parseInt(label.split("-")[1] ?? "0", 10);
@@ -59,6 +64,21 @@ export function ChatWindow() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  async function commitRename() {
+    const newName = renameRef.current?.value;
+
+    if (!newName?.trim()) return;
+
+    titleRef.current = newName;
+    setTitle(newName);
+    getCurrentWindow().setTitle(newName);
+    await emit("chat:rename", { id: chatIdRef.current, title: newName });
+
+    setIsRenaming(false);
+  }
+
+  
 
   async function sendMessage() {
     if (!prompt.trim() || loading) return;
@@ -110,14 +130,14 @@ export function ChatWindow() {
   }
 
   async function popBack() {
-    
+
     await emit("chat:popin", {
       id: chatIdRef.current,
       title: titleRef.current,
       model,
       messages: messagesRef.current,
     });
-    
+
     await getCurrentWindow().close();
   }
 
@@ -127,8 +147,18 @@ export function ChatWindow() {
     <div className="chat-window-root">
       <div className="chat-window-header">
         <div className="chat-window-title-row">
-          <h1 className="chat-window-title">{title}</h1>
+          {isRenaming
+            ? <input ref={renameRef} defaultValue={title} autoFocus
+              onBlur={commitRename}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commitRename();
+                if (e.key === "Escape") setIsRenaming(false);
+              }} />
+            : <h1 className="chat-window-title">{title}</h1>
+          }
+          <button onClick={() => setIsRenaming(true)} className="delete-button">✎</button>
           <button onClick={popBack} className="delete-button">Pop back</button>
+
           <div className="status-pill">
             <span
               className="status-dot"

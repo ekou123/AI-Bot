@@ -52,6 +52,13 @@ export default function App() {
       }
     });
 
+    const unlistenRename = listen<{ id: number; title: string }>("chat:rename", (event) => {
+      const { id, title } = event.payload;
+      console.log("chat:rename received", id, title);
+      renameBot(id, title);
+    });
+
+
     const unlistenPopIn = listen<ChatUpdatePayload>("chat:popin", (event) => {
       const { id, title, model, messages } = event.payload;
       setBots(prev => {
@@ -84,6 +91,7 @@ export default function App() {
       unlistenReady.then(fn => fn());
       unlistenPopIn.then(fn => fn());
       unlistenUpdate.then(fn => fn());
+      unlistenRename.then(fn => fn());
     };
   }, []);
 
