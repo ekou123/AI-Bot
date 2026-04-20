@@ -1,7 +1,6 @@
 use reqwest::Client;
 use serde::Serialize;
 use serde_json::{json, Value};
-use std::env;
 
 #[derive(Serialize)]
 struct AskAIResult {
@@ -17,8 +16,7 @@ struct UsageResult {
 }
 
 #[tauri::command]
-async fn ask_chatgpt(messages: Vec<Value>, model: String) -> Result<AskAIResult, String> {
-    let api_key = env::var("OPENAI_API_KEY").map_err(|_| "OPENAI_API_KEY not set".to_string())?;
+async fn ask_chatgpt(messages: Vec<Value>, model: String, api_key: String) -> Result<AskAIResult, String> {
 
     let client = Client::new();
 
@@ -86,11 +84,7 @@ async fn ask_chatgpt(messages: Vec<Value>, model: String) -> Result<AskAIResult,
 }
 
 #[tauri::command]
-async fn ask_claude(messages: Vec<Value>, model: String) -> Result<AskAIResult, String> {
-    let api_key = env::var("ANTHROPIC_API_KEY")
-        .map_err(|_| "ANTHROPIC_API_KEY is not set".to_string())?
-        .trim()
-        .to_string();
+async fn ask_claude(messages: Vec<Value>, model: String, api_key: String) -> Result<AskAIResult, String> {
 
     let client = Client::new();
 

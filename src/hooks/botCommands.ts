@@ -35,7 +35,7 @@ export function useBots(
     const bot = bots.find(b => b.id === id);
     if (!bot || !bot.prompt.trim()) return;
 
-    updateBot(id, { loading: true });
+    updateBot(id, { loading: true, reply: "" });
 
     try {
       const newMessages = [...bot.messages, { role: "user" as const, content: bot.prompt }];
@@ -65,19 +65,14 @@ export function useBots(
       }
 
       setSavedChats(prev => {
-        const existing = prev.findIndex(c => c.id === id);
         const updatedChat: SavedChat = {
           id,
           title: chatTitle,
           model: bot.model,
           messages: [...newMessages, { role: "assistant" as const, content: result.reply }],
         };
-        if (existing !== -1) {
-          const copy = [...prev];
-          copy[existing] = updatedChat;
-          return copy;
-        }
-        return [...prev, updatedChat];
+        const without = prev.filter(c => c.id !== id);
+        return [updatedChat, ...without];
       });
 
       try {

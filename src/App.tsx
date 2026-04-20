@@ -9,12 +9,14 @@ import { getDB, setupDB } from "./db";
 import { ModelKey } from "./lib/models";
 import { useBots } from "./hooks/botCommands";
 import { useWindowManager } from "./hooks/useWindowManager";
+import { SettingsPanel } from "./components/SettingsPanel";
 
 export default function App() {
   const [savedChats, setSavedChats] = useState<SavedChat[]>([]);
   const [sessionTotal, setSessionTotal] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pinned, setPinned] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const { bots, setBots, setNextId, addBot, updateBot, focusBot, deleteBot, askBot, renameBot } =
     useBots(setSavedChats, setSessionTotal);
@@ -130,6 +132,9 @@ export default function App() {
               >
                 {pinned ? "📌 Pinned" : "📌 Pin on top"}
               </button>
+              <button className="add-tab-button" onClick={() => setSettingsOpen(true)}>
+                ⚙ Settings
+              </button>
             </div>
 
             <div className="total-cost-card">
@@ -139,6 +144,8 @@ export default function App() {
           </div>
         </div>
       </div>
+
+      <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
       {bots.map(bot => (
         <ChatCard

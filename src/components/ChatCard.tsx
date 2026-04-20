@@ -172,6 +172,11 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, on
               </div>
             ))}
 
+            {bot.reply && (
+              <div className="message" style={{ background: "rgba(255,80,80,0.12)", border: "1px solid rgba(255,80,80,0.3)", color: "#ff9999" }}>
+                <pre>{bot.reply}</pre>
+              </div>
+            )}
             <div ref={bottomRef} />
           </div>
         </div>
