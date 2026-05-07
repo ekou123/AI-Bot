@@ -70,6 +70,7 @@ export function useBots(
           title: chatTitle,
           model: bot.model,
           messages: [...newMessages, { role: "assistant" as const, content: result.reply }],
+          updated_at: Math.floor(Date.now() / 1000)
         };
         const without = prev.filter(c => c.id !== id);
         return [updatedChat, ...without];

@@ -39,7 +39,9 @@ function ChatHistoryItem({ chat, isOpenCard, onReopenChat, onDeleteHistoryChat }
       <div className="history-group-header">
         <span className="history-group-title">{chat.title}</span>
         {isOpenCard && <span className="history-open-badge">open</span>}
+        
         <div className="chat-history-settings-dropdown" ref={ref}>
+          
           <button
             className="chat-menu-btn"
             onClick={(e) => { e.stopPropagation(); setMenuOpen(m => !m); }}
@@ -55,7 +57,12 @@ function ChatHistoryItem({ chat, isOpenCard, onReopenChat, onDeleteHistoryChat }
           )}
         </div>
       </div>
-      <span className="history-item">{chat.messages.length} messages</span>
+      <div>
+        <span className="history-item">{chat.messages.length} messages · {chat.model}</span>
+      </div>
+      
+      <span className="history-item">Last used: {new Date(chat.updated_at * 1000).toLocaleDateString()}</span>
+
     </div>
   );
 }

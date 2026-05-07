@@ -23,6 +23,7 @@ export type SavedChat = {
   title: string;
   model: ModelKey;
   messages: Message[];
+  updated_at: number;
 };
 
 export type BotPanel = {

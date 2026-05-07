@@ -26,7 +26,7 @@ export default function App() {
 
   useEffect(() => {
     setupDB().then(async (db) => {
-      const rows = await db.select<{ id: number; title: string; model: string; messages: string }[]>(
+      const rows = await db.select<{ id: number; title: string; model: string; messages: string, updated_at: number }[]>(
         "SELECT * FROM chats ORDER BY updated_at DESC"
       );
 
@@ -37,7 +37,7 @@ export default function App() {
         setNextId(Math.max(...rows.map(r => r.id)) + 1);
       }
 
-      setSavedChats(rows.map(r => ({ ...r, model: r.model as ModelKey, messages: JSON.parse(r.messages) })));
+      setSavedChats(rows.map(r => ({ ...r, model: r.model as ModelKey, messages: JSON.parse(r.messages), updated_at: r.updated_at })));
     });
 
     const unlistenReady = listen<{ label: string }>("chat:ready", (event) => {
@@ -79,7 +79,7 @@ export default function App() {
       );
       setSavedChats(prev => {
         const existing = prev.findIndex(c => c.id === id);
-        const updated: SavedChat = { id, title, model, messages };
+        const updated: SavedChat = { id, title, model, messages, updated_at: Date.now() / 1000};
         if (existing !== -1) {
           const copy = [...prev];
           copy[existing] = updated;
