@@ -68,16 +68,38 @@ function ChatHistoryItem({ chat, isOpenCard, onReopenChat, onDeleteHistoryChat }
 }
 
 export function Sidebar({ isOpen, savedChats, bots, onReopenChat, onDeleteHistoryChat }: Props) {
+  const [historyFilter, setHistoryFilter] = useState("");
+  const [sortMode, setSortMode] = useState<"date" | "alpha">("date");
+
+  function handleChangeHistoryFilter(newHistoryFilter: string) {
+    setHistoryFilter(newHistoryFilter);
+
+  }
+
   return (
     <div className={`sidebar ${isOpen ? "sidebar-open" : ""}`}>
       <div className="history-heading-box">
         <h1 className="history-heading-text">History</h1>
+        <div>
+          <button className="filter-history-btn"
+          onClick={() => setHistoryFilter("")}
+          >All</button>
+          <button className="filter-history-btn"
+          onClick={() => handleChangeHistoryFilter("Favourites")}>Favourites</button>
+          </div>
+        <div>Filter: <input
+            type="text"
+            value={historyFilter}
+            onChange={(e) => setHistoryFilter(e.target.value)}
+          />
+        </div>
       </div>
       <div className="sidebar-content">
         {savedChats.length === 0 && (
-          <div className="history-empty">No chats yet. Send a message to save history.</div>
+          <div className="history-empty">No chats yet. Send a message to save history.</div> 
         )}
-        {savedChats.map((chat) => (
+        { 
+        savedChats.filter(chat => chat.title.toLowerCase().includes(historyFilter.toLowerCase())).map((chat) => (
           <ChatHistoryItem
             key={chat.id}
             chat={chat}
