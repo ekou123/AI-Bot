@@ -24,6 +24,12 @@ export async function setupDB(): Promise<Database> {
   return db;
 }
 
+export async function deleteHistoryChat(id: number) {
+  await db?.execute(`
+    DELETE FROM chats WHERE id=$1
+    `, [id])
+}
+
 export async function setSetting(key: string, value: string) {
   await db?.execute(`
     INSERT INTO settings (key, value) VALUES ($1, $2)

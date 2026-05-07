@@ -5,7 +5,7 @@ import { createBot, type SavedChat } from "./lib/providers/types";
 import type { ChatUpdatePayload } from "./ChatWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen, emit } from "@tauri-apps/api/event";
-import { getDB, setupDB } from "./db";
+import { getDB, setupDB, deleteHistoryChat } from "./db";
 import { ModelKey } from "./lib/models";
 import { useBots } from "./hooks/botCommands";
 import { useWindowManager } from "./hooks/useWindowManager";
@@ -18,7 +18,7 @@ export default function App() {
   const [pinned, setPinned] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  const { bots, setBots, setNextId, addBot, updateBot, focusBot, deleteBot, askBot, renameBot } =
+  const { bots, setBots, setNextId, addBot, updateBot, focusBot, deleteBot, askBot, renameBot} =
     useBots(setSavedChats, setSessionTotal);
 
   const { pendingInits, popOutBot, reopenChat } =
@@ -103,6 +103,11 @@ export default function App() {
     setPinned(next);
   }
 
+  async function handleDeleteHistoryChat(id: number) {
+    await deleteHistoryChat(id);
+    setSavedChats(prev => prev.filter(c => c.id !== id))
+  }
+
   return (
     <div className="app-shell">
       <div className="background-glow glow-1" />
@@ -114,6 +119,7 @@ export default function App() {
           savedChats={savedChats}
           bots={bots}
           onReopenChat={reopenChat}
+          onDeleteHistoryChat={handleDeleteHistoryChat}
         />
 
         <div className="workspace">
