@@ -5,7 +5,7 @@ import { createBot, type SavedChat } from "./lib/providers/types";
 import type { ChatUpdatePayload } from "./ChatWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen, emit } from "@tauri-apps/api/event";
-import { getDB, setupDB, deleteHistoryChat } from "./db";
+import { getDB, setupDB, deleteHistoryChat, getFavouriteChats, setFavouriteChat, removeFavouriteChat } from "./db";
 import { ModelKey } from "./lib/models";
 import { useBots } from "./hooks/botCommands";
 import { useWindowManager } from "./hooks/useWindowManager";
@@ -17,6 +17,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pinned, setPinned] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [favouriteIds, setFavouriteIds] = useState<number[]>([]);
 
   const { bots, setBots, setNextId, addBot, updateBot, focusBot, deleteBot, askBot, renameBot} =
     useBots(setSavedChats, setSessionTotal);
@@ -37,7 +38,10 @@ export default function App() {
         setNextId(Math.max(...rows.map(r => r.id)) + 1);
       }
 
+      
       setSavedChats(rows.map(r => ({ ...r, model: r.model as ModelKey, messages: JSON.parse(r.messages), updated_at: r.updated_at })));
+      const favIds = await getFavouriteChats();
+      setFavouriteIds(favIds);
     });
 
     const unlistenReady = listen<{ label: string }>("chat:ready", (event) => {
@@ -108,6 +112,16 @@ export default function App() {
     setSavedChats(prev => prev.filter(c => c.id !== id))
   }
 
+  async function handleToggleFavourite(id: number) {
+    if (favouriteIds.includes(id)) {
+      await removeFavouriteChat(id);
+      setFavouriteIds(prev => prev.filter(f => f !== id));
+    } else {
+      await setFavouriteChat(id);
+      setFavouriteIds(prev => [...prev, id]);
+    }
+  }
+
   return (
     <div className="app-shell">
       <div className="background-glow glow-1" />
@@ -120,6 +134,8 @@ export default function App() {
           bots={bots}
           onReopenChat={reopenChat}
           onDeleteHistoryChat={handleDeleteHistoryChat}
+          favouriteIds={favouriteIds}
+          onToggleFavourite={handleToggleFavourite}
         />
 
         <div className="workspace">
