@@ -162,6 +162,9 @@ export function Sidebar({ isOpen, savedChats, bots, onReopenChat, onDeleteHistor
         savedChats
         .filter(chat => !showFavourites || favouriteIds.includes(chat.id))
         .filter(chat => chat.title.toLowerCase().includes(historyFilter.toLowerCase()))
+        .sort((a, b) => sortMode === "alpha"
+          ? a.title.localeCompare(b.title) 
+          : b.updated_at - a.updated_at)
         .map((chat) => (
           <ChatHistoryItem
             key={chat.id}
