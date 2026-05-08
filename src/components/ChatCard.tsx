@@ -100,10 +100,14 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, on
       <section className="chat-card"
         onMouseDown={onFocus}>
 
+        <button className="topbar-btn"
+        onClick={onDelete}>x</button>
+
         <div className="topbar"
           onMouseDown={handleMouseDown}>
+            
           <div className="topbar-left">
-            <button onClick={onDelete} className="delete-button">Delete</button>
+
             <button onClick={onPopOut} className="delete-button">Pop out</button>
             {isRenaming
               ? <input defaultValue={bot.title} autoFocus ref={renameRef}
@@ -162,7 +166,8 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, on
           </select>
 
           <span className="section-label">Response</span>
-          <div className="reply-box">
+          <div className="reply-box"
+          >
             {bot.messages.length === 0 && (
               <p className="placeholder-text">Your response will appear here.</p>
             )}
@@ -187,6 +192,7 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, on
               id={`prompt-${bot.id}`}
               value={bot.prompt}
               onChange={(e) => onUpdate({ prompt: e.target.value })}
+              onKeyDown={(e) => {if (e.key === "Enter" && e.ctrlKey) {e.preventDefault(); onAsk();} }}
               placeholder="Type your message here..."
               className="prompt-box"
             />
