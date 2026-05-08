@@ -20,6 +20,13 @@ type ItemProps = {
   onToggleFavourite: (id: number) => void;
 };
 
+type FilterDropdownProps = {
+  historyFilter: string;
+  setHistoryFilter: (v: string) => void;
+  showFavourites: boolean;
+  setShowFavourites: (v: boolean) => void;
+};
+
 function ChatHistoryItem({ chat, isOpenCard, onReopenChat, onDeleteHistoryChat, onToggleFavourite, favouriteIds }: ItemProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   
@@ -77,6 +84,48 @@ function ChatHistoryItem({ chat, isOpenCard, onReopenChat, onDeleteHistoryChat, 
   );
 }
 
+export function FilterDropdown({historyFilter, setHistoryFilter, showFavourites, setShowFavourites} : FilterDropdownProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (!ref.current?.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, []);
+
+  return (
+    
+        <div className="chat-history-filter-dropdown" ref={ref}>
+          <button
+            className="filter-history-btn"
+            onClick={(e) => { e.stopPropagation(); setMenuOpen(m => !m); }}
+          >
+            Filter
+          </button>
+          {menuOpen && (
+            <div className="chat-history-settings">
+              <button className="chat-menu-item-favourite"
+              onClick={(e) => {e.stopPropagation(); setShowFavourites(false); setHistoryFilter(""); setMenuOpen(false);}}
+              >All</button>
+              <button className="chat-menu-item-favourite"
+              onClick={(e) => { e.stopPropagation(); setShowFavourites(true); setMenuOpen(false);}}>
+                Favourites
+              </button>
+              
+              
+              
+            </div>
+          )}
+    </div>
+  )
+
+}
+
 export function Sidebar({ isOpen, savedChats, bots, onReopenChat, onDeleteHistoryChat, onToggleFavourite, favouriteIds }: Props) {
   const [historyFilter, setHistoryFilter] = useState("");
   const [sortMode, setSortMode] = useState<"date" | "alpha">("date");
@@ -89,20 +138,21 @@ export function Sidebar({ isOpen, savedChats, bots, onReopenChat, onDeleteHistor
   return (
     <div className={`sidebar ${isOpen ? "sidebar-open" : ""}`}>
       <div className="history-heading-box">
+        <div className="history-heading-row">
         <h1 className="history-heading-text">History</h1>
-        <div>
-          <button className="filter-history-btn"
-          onClick={() => {setShowFavourites(false); setHistoryFilter("")}}
-          >All</button>
-          <button className="filter-history-btn"
-          onClick={() => {setShowFavourites(true)}}>Favourites</button>
-          </div>
+        <FilterDropdown
+            historyFilter={historyFilter}
+            setHistoryFilter={setHistoryFilter}
+            showFavourites={showFavourites}
+            setShowFavourites={setShowFavourites}
+            ></FilterDropdown>
+            </div>
         <div>Filter: <input
             type="text"
             value={historyFilter}
             onChange={(e) => setHistoryFilter(e.target.value)}
           />
-        </div>
+      </div>
       </div>
       <div className="sidebar-content">
         {savedChats.length === 0 && (

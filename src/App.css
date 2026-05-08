@@ -67,6 +67,13 @@ body {
   flex-shrink: 0;
 }
 
+.chat-history-filter-dropdown {
+  position: relative;
+
+}
+
+
+
 .chat-menu-btn {
   background: none;
   border: none;
@@ -104,6 +111,19 @@ body {
   background: rgba(245, 197, 66, 0.12);
 }
 
+.chat-history-settings input {
+  display: block;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 7px;
+  color: #f5f7fb;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 0.82rem;
+  outline: none;
+  margin-top: 4px;
+}
 
 .chat-history-settings {
   position: absolute;
@@ -136,6 +156,8 @@ body {
 .chat-history-settings button:hover {
   background: rgba(255, 255, 255, 0.06);
 }
+
+
 
 .tabs-bar {
   display: flex;
@@ -180,6 +202,29 @@ body {
   letter-spacing: 0.08em;
   color: #93a4c3;
 }
+
+.history-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.filter-history-btn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #93a4c3;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.filter-history-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f5f7fb;
+}
+
+
 
 .history-group:hover {
   background: rgba(255, 255, 255, 0.04);
