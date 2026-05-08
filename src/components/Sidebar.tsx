@@ -84,7 +84,7 @@ function ChatHistoryItem({ chat, isOpenCard, onReopenChat, onDeleteHistoryChat, 
   );
 }
 
-export function FilterDropdown({historyFilter, setHistoryFilter, showFavourites, setShowFavourites} : FilterDropdownProps) {
+function FilterDropdown({historyFilter, setHistoryFilter, showFavourites, setShowFavourites} : FilterDropdownProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const ref = useRef<HTMLDivElement>(null);
@@ -130,10 +130,6 @@ export function Sidebar({ isOpen, savedChats, bots, onReopenChat, onDeleteHistor
   const [historyFilter, setHistoryFilter] = useState("");
   const [sortMode, setSortMode] = useState<"date" | "alpha">("date");
   const [showFavourites, setShowFavourites] = useState(false);
-  function handleChangeHistoryFilter(newHistoryFilter: string) {
-    setHistoryFilter(newHistoryFilter);
-
-  }
 
   return (
     <div className={`sidebar ${isOpen ? "sidebar-open" : ""}`}>
