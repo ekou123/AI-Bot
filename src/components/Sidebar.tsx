@@ -22,6 +22,9 @@ type ItemProps = {
 
 function ChatHistoryItem({ chat, isOpenCard, onReopenChat, onDeleteHistoryChat, onToggleFavourite, favouriteIds }: ItemProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  
+  const isFavourited = favouriteIds.includes(chat.id);
+  
 
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -54,7 +57,7 @@ function ChatHistoryItem({ chat, isOpenCard, onReopenChat, onDeleteHistoryChat, 
             <div className="chat-history-settings">
               <button className="chat-menu-item-favourite"
               onClick={(e) => {e.stopPropagation(); onToggleFavourite(chat.id); setMenuOpen(false);}}
-              >Favourite</button>
+              >{isFavourited ? "Unfavourite" : "Favourite"}</button>
               <button className="chat-menu-item-red"
               onClick={(e) => { e.stopPropagation(); onDeleteHistoryChat(chat.id); setMenuOpen(false);}}>
                 Delete
@@ -118,7 +121,6 @@ export function Sidebar({ isOpen, savedChats, bots, onReopenChat, onDeleteHistor
             onReopenChat={onReopenChat}
             onDeleteHistoryChat={onDeleteHistoryChat}
             onToggleFavourite={onToggleFavourite}
-            
           />
         ))}
       </div>

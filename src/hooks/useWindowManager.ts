@@ -19,6 +19,7 @@ export function useWindowManager(
       title: bot.title,
       model: bot.model,
       messages: bot.messages,
+      updated_at: Math.floor(Date.now() / 1000)
     });
 
     setBots(prev => prev.filter(b => b.id !== id));
