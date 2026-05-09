@@ -11,11 +11,49 @@ export function useBots(
   const [bots, setBots] = useState<BotPanel[]>([]);
   const [nextId, setNextId] = useState(1);
   const [topZIndex, setTopZIndex] = useState(1);
+  
 
   function addBot() {
     setBots(prev => [...prev, createBot(nextId)]);
     setNextId(prev => prev + 1);
   }
+
+  async function summariseBot(id: number) {
+    const bot = bots.find(b => b.id === id);
+    if (!bot || bot.messages.length === 0) return;
+
+    updateBot(id, { loading: true });
+
+    const result = await askAI(bot.model, [
+      ...bot.messages,
+      { role: "user", content: "Summarise our conversation so far into a concise paragraph that preserves all important context." }
+    ]);
+
+    const summary = [{ role: "assistant" as const, content: `[Summary] ${result.reply}` }];
+
+    updateBot(id, { messages: summary, loading: false });
+    setSavedChats(prev => prev.map(c => c.id === id ? { ...c, messages: summary } : c));
+    getDB().execute(
+      `UPDATE chats SET messages=$1, updated_at=unixepoch() WHERE id=$2`,
+      [JSON.stringify(summary), id]
+    );
+  }
+
+  function sliceAIChat(id: number, keep: number = 20) {
+    const bot = bots.find(b => b.id === id);
+    if (!bot) return
+
+    const sliced = bot.messages.slice(-keep);
+    updateBot(id, {messages: sliced});
+    setSavedChats(prev => prev.map(c => c.id === id ? {...c, messages: sliced} : c));
+
+    getDB().execute(
+      `UPDATE chats SET messages=$1, updated_at=unixepoch() WHERE id=$2`,
+      [JSON.stringify(sliced), id]
+    );
+
+  }
+
 
   function updateBot(id: number, updates: Partial<BotPanel>) {
     setBots(prev => prev.map(bot => bot.id === id ? { ...bot, ...updates } : bot));
@@ -96,6 +134,8 @@ export function useBots(
     }
   }
 
+  
+
   function renameBot(id: number, newTitle: string) {
     const bot = bots.find(b => b.id === id);
     if (bot) updateBot(id, { title: newTitle });
@@ -104,5 +144,5 @@ export function useBots(
     getDB().execute("UPDATE chats SET title=$1, updated_at=unixepoch() WHERE id=$2", [newTitle, id]);
   }
 
-  return { bots, setBots, nextId, setNextId, addBot, updateBot, focusBot, deleteBot, askBot, renameBot };
+  return { bots, setBots, nextId, setNextId, addBot, updateBot, focusBot, deleteBot, askBot, renameBot, summariseBot, sliceAIChat };
 }

@@ -12,12 +12,14 @@ type Props = {
   onDelete: () => void;
   onPopOut: () => void;
   onRename: (newTitle: string) => void;
+  onSummarise: () => void;
+  onSlice: () => void;
 };
 
 
 
 
-export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, onRename }: Props) {
+export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, onRename, onSummarise, onSlice }: Props) {
   const selectedModel = MODEL_INFO[bot.model];
   const dragOffset = useRef({ x: 0, y: 0 });
   const resizeStart = useRef({ x: 0, y: 0 });
@@ -102,12 +104,9 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, on
 
         <button className="topbar-btn"
         onClick={onDelete}>x</button>
-
         <div className="topbar"
           onMouseDown={handleMouseDown}>
-            
           <div className="topbar-left">
-
             <button onClick={onPopOut} className="delete-button">Pop out</button>
             {isRenaming
               ? <input defaultValue={bot.title} autoFocus ref={renameRef}
@@ -165,7 +164,21 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, on
             ))}
           </select>
 
-          <span className="section-label">Response</span>
+          <div className="response-header">
+            <span className="section-label">
+              Response
+              </span>
+              <div className="slice-btns">
+              <button
+              onClick={onSlice} className="slice-btn">Slice</button>
+            <button
+            onClick={onSummarise} className="slice-btn">Summarise</button>
+            </div>
+              
+            
+          </div>
+
+          
           <div className="reply-box"
           >
             {bot.messages.length === 0 && (

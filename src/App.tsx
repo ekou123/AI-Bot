@@ -19,7 +19,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [favouriteIds, setFavouriteIds] = useState<number[]>([]);
 
-  const { bots, setBots, setNextId, addBot, updateBot, focusBot, deleteBot, askBot, renameBot} =
+  const { bots, setBots, setNextId, addBot, updateBot, focusBot, deleteBot, askBot, renameBot, summariseBot, sliceAIChat} =
     useBots(setSavedChats, setSessionTotal);
 
   const { pendingInits, popOutBot, reopenChat } =
@@ -81,7 +81,7 @@ export default function App() {
          ON CONFLICT(id) DO UPDATE SET title=$2, model=$3, messages=$4, updated_at=unixepoch()`,
         [id, title, model, JSON.stringify(messages)]
       );
-      
+
       setSavedChats(prev => {
         const existing = prev.findIndex(c => c.id === id);
         const updated: SavedChat = { id, title, model, messages, updated_at: Date.now() / 1000};
@@ -180,6 +180,8 @@ export default function App() {
           onDelete={() => deleteBot(bot.id)}
           onPopOut={() => popOutBot(bot.id)}
           onRename={(newTitle) => renameBot(bot.id, newTitle)}
+          onSummarise={() => summariseBot(bot.id)}
+          onSlice={() => sliceAIChat(bot.id)}
         />
       ))}
     </div>
