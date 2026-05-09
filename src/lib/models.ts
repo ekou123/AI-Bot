@@ -13,6 +13,16 @@ export type ModelConfig = {
 };
 
 export const MODEL_INFO = {
+  "gpt-5.5": {
+    label: "GPT-5.5",
+    provider: "openai",
+    backendId: "gpt-5.5",
+    inputPricePer1M: 5,
+    cachedInputPricePer1M: 0.25,
+    outputPricePer1M: 30.0,
+    inputPriceText: "$2.50 / 1M input tokens",
+    outputPriceText: "$15.00 / 1M output tokens",
+  },
   "gpt-5.4": {
     label: "GPT-5.4",
     provider: "openai",
@@ -23,6 +33,7 @@ export const MODEL_INFO = {
     inputPriceText: "$2.50 / 1M input tokens",
     outputPriceText: "$15.00 / 1M output tokens",
   },
+  
   "gpt-5.4-mini": {
     label: "GPT-5.4 mini",
     provider: "openai",

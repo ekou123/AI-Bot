@@ -81,6 +81,7 @@ export default function App() {
          ON CONFLICT(id) DO UPDATE SET title=$2, model=$3, messages=$4, updated_at=unixepoch()`,
         [id, title, model, JSON.stringify(messages)]
       );
+      
       setSavedChats(prev => {
         const existing = prev.findIndex(c => c.id === id);
         const updated: SavedChat = { id, title, model, messages, updated_at: Date.now() / 1000};
