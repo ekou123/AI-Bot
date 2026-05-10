@@ -524,12 +524,12 @@ h1 {
 }
 
 .prompt-box {
-  resize: none;
+  resize: vertical;
   padding: 12px;
   font: inherit;
   font-size: 0.95rem;
   outline: none;
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  transition: border-color 0.2s ease, transform 0.2s ease, min-height 0.2s ease;
   flex: 1;
   min-height: 80px;
 }
@@ -537,6 +537,7 @@ h1 {
 .prompt-box:focus {
   border-color: rgba(110, 168, 255, 0.7);
   transform: translateY(-1px);
+  min-height: 160px;
 }
 
 .prompt-box::placeholder {

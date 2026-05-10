@@ -1,7 +1,7 @@
 import { Resizable } from "re-resizable";
-import { MODEL_INFO, MODEL_OPTIONS, type ModelKey } from "../lib/models";
 import type { BotPanel } from "../lib/providers/types";
 import { useState, useRef } from "react";
+import { ChatUI } from "./ChatUI";
 
 
 type Props = {
@@ -14,23 +14,16 @@ type Props = {
   onRename: (newTitle: string) => void;
   onSummarise: () => void;
   onSlice: () => void;
+  
 };
 
 
 
 
 export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, onRename, onSummarise, onSlice }: Props) {
-  const selectedModel = MODEL_INFO[bot.model];
   const dragOffset = useRef({ x: 0, y: 0 });
   const resizeStart = useRef({ x: 0, y: 0 });
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const renameRef = useRef<HTMLInputElement>(null);
   const [isRenaming, setIsRenaming] = useState(false);
-
-
-  // useEffect(() => {
-  //     bottomRef.current?.scrollIntoView({behavior: "smooth"});
-  //   }, [bot.messages])
 
   function handleMouseDown(e: React.MouseEvent<HTMLDivElement>) {
     e.preventDefault();
@@ -57,15 +50,6 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, on
     document.addEventListener("mouseup", onMouseUp);
   }
 
-  function commitRename() {
-    const newName = renameRef.current?.value;
-
-    if (!newName?.trim()) return;
-
-    onRename(newName)
-
-    setIsRenaming(false)
-  }
 
 
 
@@ -95,128 +79,39 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, on
         if (direction === "left" || direction === "bottomLeft" || direction === "topLeft") {
           onUpdate({ x: resizeStart.current.x - delta.width });
         }
-      }}
-
-    >
-
-      <section className="chat-card"
-        onMouseDown={onFocus}>
-
-        <button className="topbar-btn"
-        onClick={onDelete}>x</button>
-        <div className="topbar"
-          onMouseDown={handleMouseDown}>
-          <div className="topbar-left">
+      }}>
+      <ChatUI
+        title={bot.title}      
+        model={bot.model}
+        messages={bot.messages}
+        prompt={bot.prompt}
+        loading={bot.loading}
+        spent={bot.spent}
+        isRenaming={isRenaming}
+        onPromptChange={(v) => onUpdate({ prompt: v })}
+        onSend={onAsk}
+        onModelChange={(m) => onUpdate({ model: m })}
+        onRename={onRename}
+        onSlice={onSlice}
+        onSummarise={onSummarise}
+        onSetRenaming={setIsRenaming} 
+        onTopbarMouseDown={handleMouseDown}
+        overlayActions={<button className="topbar-btn" onClick={onDelete}>x</button>}
+        headerActions={<button onClick={onPopOut} className="delete-button">Pop out</button>}
+        responseActions={
+          <>
+            <button onClick={onSlice} className="slice-btn">Slice</button>
+            <button onClick={onSummarise} className="slice-btn">Summarise</button>
+          </>
+        }
+        actions={
+          <>
+            <button className="topbar-btn" onClick={onDelete}>x</button>
             <button onClick={onPopOut} className="delete-button">Pop out</button>
-            {isRenaming
-              ? <input defaultValue={bot.title} autoFocus ref={renameRef}
-                onBlur={commitRename}
-                onKeyDown={(e) => { if (e.key === "Enter") commitRename() }}>
-              </input>
-              : <h1>{bot.title}</h1>
-            }
-            <button onClick={() => setIsRenaming(true)} className="delete-button"
-            >✎</button>
-            <div className="topbar-meta">
-              <div className="chat-cost-card">
-                <span className="chat-cost-label">Chat total</span>
-                <span className="chat-cost-value">${bot.spent.toFixed(4)}</span>
-              </div>
-              <div className="chat-cost-card">
-                <span className="chat-cost-label">Last msg</span>
-                <span className="chat-cost-value">${bot.lastMessageCost.toFixed(6)}</span>
-              </div>
-            </div>
-          </div>
-          <div className="status-pill">
-            <span className="status-dot" />
-            {bot.loading ? "Thinking..." : "Ready"}
-          </div>
-        </div>
-
-        <p className="subtitle">Choose a model and send a prompt.</p>
-
-        <div className="model-price-banner">
-          <div className="model-price-name">{selectedModel.label}</div>
-          <div className="model-price-details">
-            <span>Input: {selectedModel.inputPriceText}</span>
-            <span>Output: {selectedModel.outputPriceText}</span>
-          </div>
-        </div>
-
-        <div className="input-section">
-          <select
-            id={`model-${bot.id}`}
-            className="selectAIModel"
-            value={bot.model}
-            onChange={(e) => onUpdate({ model: e.target.value as ModelKey })}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && e.ctrlKey) {
-                e.preventDefault();
-                onAsk();
-              }
-            }}
-          >
-            {MODEL_OPTIONS.map((model) => (
-              <option key={model} value={model}>
-                {MODEL_INFO[model].label}
-              </option>
-            ))}
-          </select>
-
-          <div className="response-header">
-            <span className="section-label">
-              Response
-              </span>
-              <div className="slice-btns">
-              <button
-              onClick={onSlice} className="slice-btn">Slice</button>
-            <button
-            onClick={onSummarise} className="slice-btn">Summarise</button>
-            </div>
-              
-            
-          </div>
-
-          
-          <div className="reply-box"
-          >
-            {bot.messages.length === 0 && (
-              <p className="placeholder-text">Your response will appear here.</p>
-            )}
-            {bot.messages.map((msg, i) => (
-              <div key={i} className={`message message-${msg.role}`}>
-                <pre>{msg.content}</pre>
-              </div>
-            ))}
-
-            {bot.reply && (
-              <div className="message" style={{ background: "rgba(255,80,80,0.12)", border: "1px solid rgba(255,80,80,0.3)", color: "#ff9999" }}>
-                <pre>{bot.reply}</pre>
-              </div>
-            )}
-            <div ref={bottomRef} />
-          </div>
-        </div>
-
-        <div className="reply-section">
-          <div className="actions" style={{ marginTop: 0 }}>
-            <textarea
-              id={`prompt-${bot.id}`}
-              value={bot.prompt}
-              onChange={(e) => onUpdate({ prompt: e.target.value })}
-              onKeyDown={(e) => {if (e.key === "Enter" && e.ctrlKey) {e.preventDefault(); onAsk();} }}
-              placeholder="Type your message here..."
-              className="prompt-box"
-            />
-          </div>
-          <div className="actions">
-            <button onClick={onAsk} disabled={bot.loading} className="send-button">
-              {bot.loading ? "Thinking..." : "Send"}
-            </button>
-          </div>
-        </div>
-      </section>
-    </Resizable>
-  );
+          </>
+        }
+      ></ChatUI>
+        
+      </Resizable>
+  )
 }

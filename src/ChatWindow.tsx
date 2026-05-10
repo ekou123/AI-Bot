@@ -5,6 +5,7 @@ import { calculateMessageCost } from "./lib/pricing";
 import type { Message } from "./lib/providers/types";
 import { listen, emit } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { ChatUI } from "./components/ChatUI";
 
 export type ChatUpdatePayload = {
   id: number;
@@ -78,6 +79,30 @@ export function ChatWindow() {
     setIsRenaming(false);
   }
 
+  async function handleRename(newTitle: string) {
+  titleRef.current = newTitle;
+  setTitle(newTitle);
+  getCurrentWindow().setTitle(newTitle);
+  await emit("chat:rename", { id: chatIdRef.current, title: newTitle });
+}
+
+  function sliceMessages() {
+  setMessages(prev => prev.slice(-20));
+  }
+
+  async function summariseMessages() {
+    if (messages.length === 0) return;
+    setLoading(true);
+    const result = await askAI(model, [
+      ...messagesRef.current,
+      { role: "user", content: "Summarise our conversation so far into a concise paragraph that preserves all important context." }
+    ]);
+    const summary: Message[] = [{ role: "assistant", content: `[Summary] ${result.reply}` }];
+    setMessages(summary);
+    messagesRef.current = summary;
+    setLoading(false);
+  }
+
   
 
   async function sendMessage() {
@@ -144,95 +169,27 @@ export function ChatWindow() {
   const selectedModel = MODEL_INFO[model];
 
   return (
-    <div className="chat-window-root">
-      <div className="chat-window-header">
-        <div className="chat-window-title-row">
-          {isRenaming
-            ? <input ref={renameRef} defaultValue={title} autoFocus
-              onBlur={commitRename}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") commitRename();
-                if (e.key === "Escape") setIsRenaming(false);
-              }} />
-            : <h1 className="chat-window-title">{title}</h1>
-          }
-          <button onClick={() => setIsRenaming(true)} className="delete-button">✎</button>
-          <button onClick={popBack} className="delete-button">Pop back</button>
-
-          <div className="status-pill">
-            <span
-              className="status-dot"
-              style={{
-                background: loading ? "#f59e0b" : "#4ade80",
-                boxShadow: loading
-                  ? "0 0 10px rgba(245,158,11,0.7)"
-                  : "0 0 10px rgba(74,222,128,0.7)",
-              }}
-            />
-            {loading ? "Thinking..." : "Ready"}
-          </div>
-        </div>
-        <div className="chat-window-meta">
-          <div className="chat-cost-card">
-            <span className="chat-cost-label">Chat total</span>
-            <span className="chat-cost-value">${spent.toFixed(4)}</span>
-          </div>
-          <div className="chat-cost-card">
-            <span className="chat-cost-label">Last msg</span>
-            <span className="chat-cost-value">${lastCost.toFixed(6)}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="model-price-banner">
-        <div className="model-price-name">{selectedModel.label}</div>
-        <div className="model-price-details">
-          <span>Input: {selectedModel.inputPriceText}</span>
-          <span>Output: {selectedModel.outputPriceText}</span>
-        </div>
-      </div>
-
-      <select
-        className="selectAIModel"
-        value={model}
-        onChange={(e) => setModel(e.target.value as ModelKey)}
-      >
-        {MODEL_OPTIONS.map((m) => (
-          <option key={m} value={m}>{MODEL_INFO[m].label}</option>
-        ))}
-      </select>
-
-      <div className="chat-window-messages">
-        {messages.length === 0 && (
-          <p className="placeholder-text">Your conversation will appear here.</p>
-        )}
-        {messages.map((msg, i) => (
-          <div key={i} className={`message message-${msg.role}`}>
-            <pre>{msg.content}</pre>
-          </div>
-        ))}
-        <div ref={bottomRef} />
-      </div>
-
-      <div className="chat-window-input">
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && e.ctrlKey) {
-              e.preventDefault();
-              sendMessage();
-            }
-          }}
-          placeholder="Type your message... (Ctrl+Enter to send)"
-          className="prompt-box"
-        />
-        <div className="actions">
-          <button onClick={sendMessage} disabled={loading} className="send-button">
-            {loading ? "Thinking..." : "Send"}
-          </button>
-        </div>
-      </div>
-    </div>
+  <ChatUI
+      title={title}
+      model={model}
+      messages={messages}
+      prompt={prompt}
+      loading={loading}
+      spent={spent}
+      isRenaming={isRenaming}
+      onPromptChange={setPrompt}
+      onSend={sendMessage}
+      onModelChange={setModel}
+      onRename={handleRename}
+      onSlice={sliceMessages}
+      onSummarise={summariseMessages}
+      onSetRenaming={setIsRenaming}
+      headerActions={<button onClick={popBack} className="delete-button">Pop back</button>}
+      responseActions={<>
+        <button onClick={sliceMessages} className="slice-btn">Slice</button>
+        <button onClick={summariseMessages} className="slice-btn">Summarise</button>
+      </>} onTopbarMouseDown={function (e: React.MouseEvent<HTMLDivElement>): void {
+        throw new Error("Function not implemented.");
+      } }  />
   );
 }
