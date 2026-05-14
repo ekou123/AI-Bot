@@ -1,7 +1,7 @@
 import { useState, Dispatch, SetStateAction } from "react";
 import { AgentStepResult, BotPanel, createBot, Message, SavedChat } from "../lib/providers/types";
 import { calculateMessageCost } from "../lib/pricing";
-import { askAI } from "../lib/providers";
+import { askAI, streamAI } from "../lib/providers";
 import { getDB, getSetting } from "../db";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -188,25 +188,34 @@ export function useBots(
     const bot = bots.find(b => b.id === id);
     if (!bot || !bot.prompt.trim()) return;
 
-    updateBot(id, { loading: true, reply: "" });
+    const apiMessages = [...bot.messages.filter(m => m.role !== "tool"), { role: "user" as const, content: bot.prompt }];
+
+    updateBot(id, { loading: true, reply: "", prompt: "" });
 
     try {
-      const newMessages = [...bot.messages.filter(m => m.role !== "tool"), { role: "user" as const, content: bot.prompt }];
-      const result = await askAI(bot.model, newMessages);
-      const messageCost = calculateMessageCost(
-        bot.model,
-        result.usage.input_tokens,
-        result.usage.cached_input_tokens,
-        result.usage.output_tokens
-      );
+      let reply = "";
 
+      // Push user message + empty assistant bubble so streaming fills it in live
       setBots(prev => prev.map(b => b.id === id ? {
         ...b,
-        messages: [...newMessages, { role: "assistant" as const, content: result.reply }],
-        prompt: "",
-        spent: b.spent + messageCost,
-        lastMessageCost: messageCost,
+        messages: [...apiMessages, { role: "assistant" as const, content: "" }],
       } : b));
+
+      const result = await streamAI(bot.model, apiMessages, (chunk) => {
+        reply += chunk;
+        setBots(prev => prev.map(b => {
+          if (b.id !== id) return b;
+          const msgs = [...b.messages];
+          msgs[msgs.length - 1] = { role: "assistant", content: reply };
+          return { ...b, messages: msgs };
+        }));
+      });
+
+      const messageCost = calculateMessageCost(bot.model, result.usage.input_tokens, result.usage.cached_input_tokens, result.usage.output_tokens);
+      setSessionTotal(prev => prev + messageCost);
+      updateBot(id, { spent: (bots.find(b => b.id === id)?.spent ?? 0) + messageCost });
+
+      const finalMessages = [...apiMessages, { role: "assistant" as const, content: reply }];
 
       let chatTitle = bot.title;
       if (bot.messages.length === 0 && bot.title === `Bot ${id}`) {
@@ -222,11 +231,10 @@ export function useBots(
           id,
           title: chatTitle,
           model: bot.model,
-          messages: [...newMessages, { role: "assistant" as const, content: result.reply }],
-          updated_at: Math.floor(Date.now() / 1000)
+          messages: finalMessages,
+          updated_at: Math.floor(Date.now() / 1000),
         };
-        const without = prev.filter(c => c.id !== id);
-        return [updatedChat, ...without];
+        return [updatedChat, ...prev.filter(c => c.id !== id)];
       });
 
       try {
@@ -235,15 +243,17 @@ export function useBots(
           `INSERT INTO chats (id, title, model, messages, updated_at)
            VALUES ($1, $2, $3, $4, unixepoch())
            ON CONFLICT(id) DO UPDATE SET title=$2, model=$3, messages=$4, updated_at=unixepoch()`,
-          [id, chatTitle, bot.model, JSON.stringify([...newMessages, { role: "assistant", content: result.reply }])]
+          [id, chatTitle, bot.model, JSON.stringify(finalMessages)]
         );
       } catch (dbErr) {
         console.error("DB save failed:", dbErr);
       }
 
-      setSessionTotal(prev => prev + messageCost);
     } catch (err) {
-      updateBot(id, { reply: JSON.stringify(err) });
+      setBots(prev => prev.map(b => b.id === id ? {
+        ...b,
+        messages: [...apiMessages, { role: "assistant", content: `Error: ${String(err)}` }],
+      } : b));
     } finally {
       updateBot(id, { loading: false });
     }

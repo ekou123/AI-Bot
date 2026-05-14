@@ -1,6 +1,8 @@
 use reqwest::Client;
 use serde::Serialize;
 use serde_json::{json, Value};
+use futures_util::StreamExt;
+use tauri::Emitter;
 
 #[derive(Serialize)]
 struct ToolCallItem {
@@ -291,11 +293,136 @@ async fn web_search(query: String, api_key: String) -> Result<String, String> {
     Ok(result)
 }
 
+#[tauri::command]
+async fn stream_claude(
+    app: tauri::AppHandle,
+    messages: Vec<Value>,
+    model: String,
+    api_key: String,
+    stream_id: String,
+) -> Result<(), String> {
+    let client = Client::new();
+
+    let response = client
+        .post(ANTHROPIC_URL)
+        .header("x-api-key", &api_key)
+        .header("anthropic-version", "2023-06-01")
+        .json(&json!({
+            "model": model,
+            "max_tokens": 8096,
+            "stream": true,
+            "messages": messages
+        }))
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {}", e))?;
+
+    if !response.status().is_success() {
+        let body: Value = response.json().await.unwrap_or(Value::Null);
+        app.emit(&format!("stream:error:{}", stream_id), format!("Anthropic error: {}", body)).ok();
+        return Err(format!("Anthropic error: {}", body));
+    }
+
+    let mut byte_stream = response.bytes_stream();
+    let mut buffer = String::new();
+
+    while let Some(chunk) = byte_stream.next().await {
+        let chunk = chunk.map_err(|e| format!("Stream error: {}", e))?;
+        buffer.push_str(&String::from_utf8_lossy(&chunk));
+
+        while let Some(pos) = buffer.find('\n') {
+            let line = buffer[..pos].trim().to_string();
+            buffer = buffer[pos + 1..].to_string();
+
+            if let Some(data) = line.strip_prefix("data: ") {
+                if data == "[DONE]" {
+                    app.emit(&format!("stream:done:{}", stream_id), ()).ok();
+                    return Ok(());
+                }
+                if let Ok(parsed) = serde_json::from_str::<Value>(data) {
+                    if parsed.get("type").and_then(|t| t.as_str()) == Some("content_block_delta") {
+                        if let Some(text) = parsed.get("delta").and_then(|d| d.get("text")).and_then(|t| t.as_str()) {
+                            app.emit(&format!("stream:chunk:{}", stream_id), text).ok();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    app.emit(&format!("stream:done:{}", stream_id), ()).ok();
+    Ok(())
+}
+
+#[tauri::command]
+async fn stream_chatgpt(
+    app: tauri::AppHandle,
+    messages: Vec<Value>,
+    model: String,
+    api_key: String,
+    stream_id: String,
+) -> Result<(), String> {
+    let client = Client::new();
+
+    let response = client
+        .post("https://api.openai.com/v1/chat/completions")
+        .bearer_auth(&api_key)
+        .json(&json!({
+            "model": model,
+            "stream": true,
+            "messages": messages
+        }))
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {}", e))?;
+
+    if !response.status().is_success() {
+        let body: Value = response.json().await.unwrap_or(Value::Null);
+        app.emit(&format!("stream:error:{}", stream_id), format!("OpenAI error: {}", body)).ok();
+        return Err(format!("OpenAI error: {}", body));
+    }
+
+    let mut byte_stream = response.bytes_stream();
+    let mut buffer = String::new();
+
+    while let Some(chunk) = byte_stream.next().await {
+        let chunk = chunk.map_err(|e| format!("Stream error: {}", e))?;
+        buffer.push_str(&String::from_utf8_lossy(&chunk));
+
+        while let Some(pos) = buffer.find('\n') {
+            let line = buffer[..pos].trim().to_string();
+            buffer = buffer[pos + 1..].to_string();
+
+            if let Some(data) = line.strip_prefix("data: ") {
+                if data == "[DONE]" {
+                    app.emit(&format!("stream:done:{}", stream_id), ()).ok();
+                    return Ok(());
+                }
+                if let Ok(parsed) = serde_json::from_str::<Value>(data) {
+                    if let Some(text) = parsed
+                        .get("choices")
+                        .and_then(|c| c.as_array())
+                        .and_then(|arr| arr.first())
+                        .and_then(|choice| choice.get("delta"))
+                        .and_then(|delta| delta.get("content"))
+                        .and_then(|t| t.as_str())
+                    {
+                        app.emit(&format!("stream:chunk:{}", stream_id), text).ok();
+                    }
+                }
+            }
+        }
+    }
+
+    app.emit(&format!("stream:done:{}", stream_id), ()).ok();
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_sql::Builder::new().build())
-        .invoke_handler(tauri::generate_handler![ask_chatgpt, ask_claude, ask_claude_agent, web_search])
+        .invoke_handler(tauri::generate_handler![ask_chatgpt, ask_claude, ask_claude_agent, web_search, stream_claude, stream_chatgpt])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 

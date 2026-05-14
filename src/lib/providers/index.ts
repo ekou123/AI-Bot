@@ -14,4 +14,19 @@ export function askAI(model: ModelKey, messages: Message[]): Promise<AskResult> 
   return provider.ask(config.backendId, messages);
 }
 
+export async function streamAI(
+  model: ModelKey,
+  messages: Message[],
+  onChunk: (text: string) => void
+): Promise<AskResult> {
+  const config = MODEL_INFO[model];
+  const provider = PROVIDERS[config.provider];
+  if (provider.stream) {
+    return provider.stream(config.backendId, messages, onChunk);
+  }
+  const result = await provider.ask(config.backendId, messages);
+  onChunk(result.reply);
+  return result;
+}
+
 export type { AskResult };

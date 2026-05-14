@@ -10,7 +10,8 @@ export type AskResult = {
 }
 
 export interface AIProvider {
-    ask(backendId: string, messages: Message[]): Promise<AskResult>;
+  ask(backendId: string, messages: Message[]): Promise<AskResult>;
+  stream?(backendId: string, messages: Message[], onChunk: (text: string) => void): Promise<AskResult>;
 }
 
 export type Message = {
