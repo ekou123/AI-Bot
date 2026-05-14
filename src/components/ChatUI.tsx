@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Resizable } from "re-resizable";
 import { MODEL_INFO, MODEL_OPTIONS, ModelKey } from "../lib/models";
 import { Message } from "../lib/providers/types";
@@ -25,6 +25,25 @@ type ChatUIProps = {
   actions?: React.ReactNode;
 };
 
+function MessageBubble({ role, content }: { role: string; content: string }) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className={`message message-${role}`}>
+      <button className="message-copy-btn" onClick={handleCopy}>
+        {copied ? "✓" : "⎘"}
+      </button>
+      <pre>{content}</pre>
+    </div>
+  );
+}
+
 export function ChatUI({
   title, model, messages, prompt, loading, spent,
   isRenaming, onPromptChange, onSend, onModelChange,
@@ -33,6 +52,12 @@ export function ChatUI({
   const selectedModel = MODEL_INFO[model];
   const bottomRef = useRef<HTMLDivElement>(null);
   const renameRef = useRef<HTMLInputElement>(null);
+  const [responseHeight, setResponseHeight] = useState(300);
+  const [promptHeight, setPromptHeight] = useState(80);
+  const MIN_RESPONSE = 100;
+  const MAX_RESPONSE = 800;
+  const MIN_PROMPT = 60;
+  const MAX_PROMPT = 400;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -99,39 +124,51 @@ export function ChatUI({
             
           </div>
         </div>
-
-        <div className="reply-box">
+        
+        <Resizable
+            size={{ width: "100%", height: responseHeight }}
+            enable={{ bottom: true }}
+            minHeight={MIN_RESPONSE}
+            maxHeight={MAX_RESPONSE}
+            onResizeStop={(_e, _dir, _ref, delta) => {
+              setResponseHeight(h => Math.max(MIN_RESPONSE, Math.min(MAX_RESPONSE, h + delta.height)));
+            }}>
+        <div className="reply-box " style={{height: "100%"}}>
           {messages.length === 0 && (
             <p className="placeholder-text">Your response will appear here.</p>
           )}
           {messages.map((msg, i) => (
-            <div key={i} className={`message message-${msg.role}`}>
-              <pre>{msg.content}</pre>
-            </div>
+            <MessageBubble key={i} role={msg.role} content={msg.content} />
           ))}
           <div ref={bottomRef} />
         </div>
+        </Resizable>
       </div>
 
+      
+
       <div className="reply-section">
-        <div className="actions" style={{ marginTop: 0 }}>
-          <Resizable
-            defaultSize={{ width: "100%", height: 80 }}
-            enable={{ bottom: true }}
-            minHeight={60}
-            maxHeight={400}
-          >
-            <textarea
-              value={prompt}
-              onChange={(e) => onPromptChange(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && e.ctrlKey) { e.preventDefault(); onSend(); } }}
-              placeholder="Type your message here..."
-              className="prompt-box"
-              style={{ height: "100%", resize: "none" }}
-            />
-          </Resizable>
-        </div>
+        <Resizable
+          size={{ width: "100%", height: promptHeight }}
+          enable={{ bottom: true }}
+          minHeight={MIN_PROMPT}
+          maxHeight={MAX_PROMPT}
+          handleStyles={{ bottom: { bottom: 0, height: 8, zIndex: 10, cursor: "row-resize" } }}
+          onResizeStop={(_e, _dir, _ref, delta) => {
+            setPromptHeight(h => Math.max(MIN_PROMPT, Math.min(MAX_PROMPT, h + delta.height)));
+          }}
+        >
+          <textarea
+            value={prompt}
+            onChange={(e) => onPromptChange(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && e.ctrlKey) { e.preventDefault(); onSend(); } }}
+            placeholder="Type your message here..."
+            className="prompt-box"
+            style={{ height: "calc(100% - 8px)", resize: "none" }}
+          />
+        </Resizable>
         <div className="actions">
+          {actions}
           <button onClick={onSend} disabled={loading} className="send-button">
             {loading ? "Thinking..." : "Send"}
           </button>

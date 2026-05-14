@@ -9,17 +9,23 @@ type Props = {
 export function SettingsPanel({ isOpen, onClose }: Props) {
   const [openaiKey, setOpenaiKey] = useState("");
   const [anthropicKey, setAnthropicKey] = useState("");
+  const [tavilyKey, setTavilyKey] = useState("");
   const [saved, setSaved] = useState(false);
+
+
+  
 
   useEffect(() => {
     if (!isOpen) return;
     getSetting("openai_api_key").then(v => setOpenaiKey(v ?? ""));
     getSetting("anthropic_api_key").then(v => setAnthropicKey(v ?? ""));
+    getSetting("tavily_api_key").then(v => setTavilyKey(v ?? ""));
   }, [isOpen]);
 
   async function handleSave() {
     await setSetting("openai_api_key", openaiKey.trim());
     await setSetting("anthropic_api_key", anthropicKey.trim());
+    await setSetting("tavily_api_key", tavilyKey.trim());
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
@@ -55,6 +61,19 @@ export function SettingsPanel({ isOpen, onClose }: Props) {
             onChange={e => setAnthropicKey(e.target.value)}
           />
         </div>
+
+        <div className="settings-field">
+          <label className="section-label">Tavily API Key</label>
+          <input
+            className="settings-input"
+            type="password"
+            placeholder="tvly-..."
+            value={tavilyKey}
+            onChange={e => setTavilyKey(e.target.value)}
+          />
+        </div>
+
+        
 
         <div className="actions">
           <button className="send-button" onClick={handleSave}>

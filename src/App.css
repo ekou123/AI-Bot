@@ -335,10 +335,31 @@ body {
   overflow: visible;
 }
 
+.chat-card-outer {
+  position: relative;
+}
+
+.chat-card-resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+  z-index: 10;
+}
+
+.chat-card-resize-left {
+  left: -4px;
+}
+
+.chat-card-resize-right {
+  right: -4px;
+}
+
 .chat-card {
   min-width: 0;
   width: 100%;
-  height: 100%;
+  height: auto;
   padding: 16px 20px;
   border-radius: 20px;
   background: rgba(15, 23, 42, 0.78);
@@ -529,15 +550,14 @@ h1 {
   font: inherit;
   font-size: 0.95rem;
   outline: none;
-  transition: border-color 0.2s ease, transform 0.2s ease, min-height 0.2s ease;
+  transition: border-color 0.2s ease, transform 0.2s ease;
   flex: 1;
-  min-height: 80px;
+  min-height: 0;
 }
 
 .prompt-box:focus {
   border-color: rgba(110, 168, 255, 0.7);
   transform: translateY(-1px);
-  min-height: 160px;
 }
 
 .prompt-box::placeholder {
@@ -580,7 +600,7 @@ h1 {
 }
 
 .reply-box {
-  flex: 1;
+  flex: none;
   padding: 12px;
   overflow-y: auto;
   min-height: 0;
@@ -651,10 +671,35 @@ h1 {
 }
 
 .message {
+  position: relative;
   margin-bottom: 12px;
   padding: 10px 14px;
   border-radius: 12px;
   line-height: 1.5;
+}
+
+.message-copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #93a4c3;
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.message:hover .message-copy-btn {
+  opacity: 1;
+}
+
+.message-copy-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #f5f7fb;
 }
 
 .message-user {
@@ -667,6 +712,16 @@ h1 {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   margin-right: 20%;
+}
+
+.message-tool {
+  background: rgba(212, 160, 23, 0.08);
+  border: 1px solid rgba(212, 160, 23, 0.2);
+  color: #b8a060;
+  font-size: 0.85rem;
+  font-family: "Fira Code", "Cascadia Code", monospace;
+  margin-left: 10%;
+  margin-right: 10%;
 }
 
 
@@ -722,6 +777,48 @@ h1 {
 .chat-window-input .prompt-box {
   min-height: 70px;
 }
+
+.add-tab-button--active {
+  background: rgba(86, 110, 255, 0.2);
+  border: 1px solid rgba(86, 110, 255, 0.6);
+  box-shadow: 0 0 0 1px rgba(86, 110, 255, 0.2), 0 6px 16px rgba(0, 0, 0, 0.25);
+  color: #a0b4ff;
+  opacity: 1;
+}
+
+.message p  { margin: 0 0 8px; }
+.message p:last-child { margin-bottom: 0; }
+.message ul, .message ol { margin: 4px 0 8px 16px; padding: 0; }
+.message li { margin-bottom: 2px; }
+.message code {
+  font-family: "Fira Code", "Cascadia Code", monospace;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.88em;
+}
+.message pre {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 12px;
+  overflow-x: auto;
+  margin: 6px 0;
+}
+.message pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.9em;
+}
+.message h1, .message h2, .message h3 { margin: 8px 0 4px; font-size: 1em; }
+.message a { color: #8ab4ff; }
+.message blockquote {
+  border-left: 3px solid rgba(255,255,255,0.2);
+  margin: 4px 0;
+  padding-left: 10px;
+  color: #93a4c3;
+}
+
 
 /* Launcher empty state */
 .launcher-empty-state {

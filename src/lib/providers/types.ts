@@ -14,8 +14,16 @@ export interface AIProvider {
 }
 
 export type Message = {
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "tool";
   content: string;
+}
+
+export type AgentStepResult = {
+  done: boolean;
+  reply: string;
+  tool_calls: { id: string; name: string; input: Record<string, unknown> }[];
+  assistant_content: unknown;
+  usage: { input_tokens: number; cached_input_tokens: number; output_tokens: number };
 }
 
 export type SavedChat = {
@@ -52,8 +60,8 @@ export function createBot(id: number): BotPanel {
     loading: false,
     spent: 0,
     lastMessageCost: 0,
-    x: (id-1)*30,
-    y: (id-1)*30,
+    x: -700 + (id - 1) * 30,
+    y: -700 + (id - 1) * 30,
     zIndex: 0,
   };
 }

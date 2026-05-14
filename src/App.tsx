@@ -19,7 +19,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [favouriteIds, setFavouriteIds] = useState<number[]>([]);
 
-  const { bots, setBots, setNextId, addBot, updateBot, focusBot, deleteBot, askBot, renameBot, summariseBot, sliceAIChat} =
+  const { bots, setBots, setNextId, addBot, updateBot, focusBot, deleteBot, askBot, renameBot, summariseBot, sliceAIChat, runResearchAgent } =
     useBots(setSavedChats, setSessionTotal);
 
   const { pendingInits, popOutBot, reopenChat } =
@@ -182,6 +182,7 @@ export default function App() {
           onRename={(newTitle) => renameBot(bot.id, newTitle)}
           onSummarise={() => summariseBot(bot.id)}
           onSlice={() => sliceAIChat(bot.id)}
+          onRunAsAgent={() => runResearchAgent(bot.id)}
         />
       ))}
     </div>

@@ -1,8 +1,6 @@
-import { Resizable } from "re-resizable";
 import type { BotPanel } from "../lib/providers/types";
 import { useState, useRef } from "react";
 import { ChatUI } from "./ChatUI";
-
 
 type Props = {
   bot: BotPanel;
@@ -14,16 +12,17 @@ type Props = {
   onRename: (newTitle: string) => void;
   onSummarise: () => void;
   onSlice: () => void;
-  
+  onRunAsAgent: () => void;
 };
 
+const MIN_WIDTH = 300;
+const MAX_WIDTH = 1000;
 
-
-
-export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, onRename, onSummarise, onSlice }: Props) {
+export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, onRename, onSummarise, onSlice, onRunAsAgent }: Props) {
   const dragOffset = useRef({ x: 0, y: 0 });
-  const resizeStart = useRef({ x: 0, y: 0 });
   const [isRenaming, setIsRenaming] = useState(false);
+  const [width, setWidth] = useState(400);
+  const widthRef = useRef(400);
 
   function handleMouseDown(e: React.MouseEvent<HTMLDivElement>) {
     e.preventDefault();
@@ -50,38 +49,48 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, on
     document.addEventListener("mouseup", onMouseUp);
   }
 
+  function handleResize(e: React.MouseEvent, left: boolean) {
+    e.preventDefault();
+    onFocus();
+    const startX = e.clientX;
+    const startWidth = widthRef.current;
+    const startBotX = bot.x;
 
+    function onMouseMove(moveEvent: MouseEvent) {
+      const delta = left
+        ? startX - moveEvent.clientX
+        : moveEvent.clientX - startX;
+      const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startWidth + delta));
+      widthRef.current = newWidth;
+      setWidth(newWidth);
+      if (left) onUpdate({ x: startBotX - (newWidth - startWidth) });
+    }
 
+    function onMouseUp() {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    }
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  }
 
   return (
-    <Resizable
-      defaultSize={{ width: 400, height: 500 }}
-      minWidth={600}
-      maxWidth={1000}
-      enable={{
-        left: true, right: true, top: true, bottom: true,
-        topLeft: true, topRight: true, bottomLeft: true, bottomRight: true,
-      }}
+    <div
       style={{
         position: "fixed",
         left: bot.x,
         top: bot.y,
         zIndex: bot.zIndex,
+        width,
       }}
-      onResizeStart={() => {
-        resizeStart.current = { x: bot.x, y: bot.y }
-      }
-      }
-      onResize={(e, direction, ref, delta) => {
-        if (direction === "top" || direction === "topLeft" || direction === "topRight") {
-          onUpdate({ y: resizeStart.current.y - delta.height });
-        }
-        if (direction === "left" || direction === "bottomLeft" || direction === "topLeft") {
-          onUpdate({ x: resizeStart.current.x - delta.width });
-        }
-      }}>
+      className="chat-card-outer"
+    >
+      
+      <div className="chat-card-resize-handle chat-card-resize-left"  onMouseDown={(e) => handleResize(e, true)} />
+      <div className="chat-card-resize-handle chat-card-resize-right" onMouseDown={(e) => handleResize(e, false)} />
       <ChatUI
-        title={bot.title}      
+        title={bot.title}
         model={bot.model}
         messages={bot.messages}
         prompt={bot.prompt}
@@ -94,7 +103,7 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, on
         onRename={onRename}
         onSlice={onSlice}
         onSummarise={onSummarise}
-        onSetRenaming={setIsRenaming} 
+        onSetRenaming={setIsRenaming}
         onTopbarMouseDown={handleMouseDown}
         overlayActions={<button className="topbar-btn" onClick={onDelete}>x</button>}
         headerActions={<button onClick={onPopOut} className="delete-button">Pop out</button>}
@@ -108,10 +117,11 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, on
           <>
             <button className="topbar-btn" onClick={onDelete}>x</button>
             <button onClick={onPopOut} className="delete-button">Pop out</button>
+            <button onClick={onRunAsAgent} className="delete-button">→ Agent</button>
           </>
         }
-      ></ChatUI>
-        
-      </Resizable>
-  )
+      />
+      
+    </div>
+  );
 }

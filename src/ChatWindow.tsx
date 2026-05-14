@@ -25,6 +25,7 @@ export function ChatWindow() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const chatIdRef = useRef<number>(0);
   const messagesRef = useRef<Message[]>([]);
+  const [pinned, setPinned] = useState(false);
   const titleRef = useRef("New Chat");
 
   const [isRenaming, setIsRenaming] = useState(false);
@@ -79,6 +80,12 @@ export function ChatWindow() {
     setIsRenaming(false);
   }
 
+  async function togglePin() {
+    const next = !pinned;
+    await getCurrentWindow().setAlwaysOnTop(next);
+    setPinned(next);
+  }
+
   async function handleRename(newTitle: string) {
   titleRef.current = newTitle;
   setTitle(newTitle);
@@ -102,8 +109,6 @@ export function ChatWindow() {
     messagesRef.current = summary;
     setLoading(false);
   }
-
-  
 
   async function sendMessage() {
     if (!prompt.trim() || loading) return;
@@ -184,12 +189,20 @@ export function ChatWindow() {
       onSlice={sliceMessages}
       onSummarise={summariseMessages}
       onSetRenaming={setIsRenaming}
-      headerActions={<button onClick={popBack} className="delete-button">Pop back</button>}
+      headerActions={<>
+      <button onClick={popBack} className="delete-button">Pop back</button>
+      <button
+      className={`add-tab-button ${pinned ? "add-tab-button--active" : ""}`}
+      onClick={togglePin}
+    >
+      📌 {pinned ? "Pinned" : "Pin on top"}
+    </button>
+      </>}
       responseActions={<>
         <button onClick={sliceMessages} className="slice-btn">Slice</button>
         <button onClick={summariseMessages} className="slice-btn">Summarise</button>
       </>} onTopbarMouseDown={function (e: React.MouseEvent<HTMLDivElement>): void {
-        throw new Error("Function not implemented.");
       } }  />
+      
   );
 }

@@ -1,8 +1,9 @@
 import { useState, Dispatch, SetStateAction } from "react";
-import { BotPanel, createBot, SavedChat } from "../lib/providers/types";
+import { AgentStepResult, BotPanel, createBot, Message, SavedChat } from "../lib/providers/types";
 import { calculateMessageCost } from "../lib/pricing";
 import { askAI } from "../lib/providers";
-import { getDB } from "../db";
+import { getDB, getSetting } from "../db";
+import { invoke } from "@tauri-apps/api/core";
 
 export function useBots(
   setSavedChats: Dispatch<SetStateAction<SavedChat[]>>,
@@ -25,17 +26,39 @@ export function useBots(
     updateBot(id, { loading: true });
 
     const result = await askAI(bot.model, [
-      ...bot.messages,
+      ...bot.messages.filter(m => m.role !== "tool"),
       { role: "user", content: "Summarise our conversation so far into a concise paragraph that preserves all important context." }
     ]);
 
-    const summary = [{ role: "assistant" as const, content: `[Summary] ${result.reply}` }];
+    updateBot(id, { loading: false });
 
-    updateBot(id, { messages: summary, loading: false });
-    setSavedChats(prev => prev.map(c => c.id === id ? { ...c, messages: summary } : c));
+    const summary: Message[] = [{ role: "assistant", content: `[Summary] ${result.reply}` }];
+    const newId = nextId;
+    setNextId(prev => prev + 1);
+
+    const newBot: BotPanel = {
+      ...createBot(newId),
+      title: `Summary of ${bot.title}`,
+      model: bot.model,
+      messages: summary,
+      x: bot.x + 30,
+      y: bot.y + 30,
+      zIndex: topZIndex + 1,
+    };
+    setTopZIndex(prev => prev + 1);
+    setBots(prev => [...prev, newBot]);
+
+    const newSavedChat: SavedChat = {
+      id: newId,
+      title: newBot.title,
+      model: newBot.model,
+      messages: summary,
+      updated_at: Math.floor(Date.now() / 1000),
+    };
+    setSavedChats(prev => [newSavedChat, ...prev]);
     getDB().execute(
-      `UPDATE chats SET messages=$1, updated_at=unixepoch() WHERE id=$2`,
-      [JSON.stringify(summary), id]
+      `INSERT INTO chats (id, title, model, messages, updated_at) VALUES ($1, $2, $3, $4, unixepoch())`,
+      [newId, newBot.title, newBot.model, JSON.stringify(summary)]
     );
   }
 
@@ -69,6 +92,98 @@ export function useBots(
     setBots(prev => prev.filter(b => b.id !== id));
   }
 
+  async function runResearchAgent(id: number) {
+    const bot = bots.find(b => b.id === id);
+    if (!bot || !bot.prompt.trim()) return;
+
+    const goal = bot.prompt;
+    const anthropicKey = await getSetting("anthropic_api_key");
+    const tavilyKey = await getSetting("tavily_api_key");
+
+    if (!anthropicKey) {
+      updateBot(id, { messages: [{ role: "assistant", content: "Error: Anthropic API key not set. Open Settings." }], loading: false });
+      return;
+    }
+    if (!tavilyKey) {
+      updateBot(id, { messages: [{ role: "assistant", content: "Error: Tavily API key not set. Open Settings." }], loading: false });
+      return;
+    }
+
+    updateBot(id, { loading: true, prompt: "", messages: [{ role: "user", content: goal }] });
+
+    const tools = [{
+      name: "web_search",
+      description: "Search the web for current, up-to-date information.",
+      input_schema: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "A focused search query." }
+        },
+        required: ["query"]
+      }
+    }];
+
+    const apiMessages: unknown[] = [{ role: "user", content: goal }];
+    let totalCost = 0;
+
+    try {
+      for (let i = 0; i < 10; i++) {
+        const step = await invoke<AgentStepResult>("ask_claude_agent", {
+          messages: apiMessages,
+          tools,
+          model: "claude-sonnet-4-6",
+          apiKey: anthropicKey,
+        });
+
+        totalCost += calculateMessageCost("claude-sonnet-4.6", step.usage.input_tokens, step.usage.cached_input_tokens, step.usage.output_tokens);
+
+        if (step.done) {
+          setBots(prev => prev.map(b => b.id === id ? {
+            ...b,
+            messages: [...b.messages, { role: "assistant" as const, content: step.reply }],
+            loading: false,
+            spent: b.spent + totalCost,
+          } : b));
+          break;
+        }
+
+        apiMessages.push({ role: "assistant", content: step.assistant_content });
+
+        const toolResults: unknown[] = [];
+        for (const call of step.tool_calls) {
+          setBots(prev => prev.map(b => b.id === id ? {
+            ...b,
+            messages: [...b.messages, { role: "tool" as const, content: `🔍 Searching: "${call.input.query}"` }],
+          } : b));
+
+          try {
+            const searchResult = await invoke<string>("web_search", {
+              query: call.input.query as string,
+              apiKey: tavilyKey,
+            });
+
+            setBots(prev => prev.map(b => b.id === id ? {
+              ...b,
+              messages: [...b.messages, { role: "tool" as const, content: searchResult }],
+            } : b));
+
+            toolResults.push({ type: "tool_result", tool_use_id: call.id, content: searchResult });
+          } catch (searchErr) {
+            toolResults.push({ type: "tool_result", tool_use_id: call.id, content: `Search failed: ${String(searchErr)}`, is_error: true });
+          }
+        }
+
+        apiMessages.push({ role: "user", content: toolResults });
+      }
+    } catch (err) {
+      setBots(prev => prev.map(b => b.id === id ? {
+        ...b,
+        messages: [...b.messages, { role: "assistant" as const, content: `Agent error: ${String(err)}` }],
+        loading: false,
+      } : b));
+    }
+  }
+
   async function askBot(id: number) {
     const bot = bots.find(b => b.id === id);
     if (!bot || !bot.prompt.trim()) return;
@@ -76,7 +191,7 @@ export function useBots(
     updateBot(id, { loading: true, reply: "" });
 
     try {
-      const newMessages = [...bot.messages, { role: "user" as const, content: bot.prompt }];
+      const newMessages = [...bot.messages.filter(m => m.role !== "tool"), { role: "user" as const, content: bot.prompt }];
       const result = await askAI(bot.model, newMessages);
       const messageCost = calculateMessageCost(
         bot.model,
@@ -144,5 +259,5 @@ export function useBots(
     getDB().execute("UPDATE chats SET title=$1, updated_at=unixepoch() WHERE id=$2", [newTitle, id]);
   }
 
-  return { bots, setBots, nextId, setNextId, addBot, updateBot, focusBot, deleteBot, askBot, renameBot, summariseBot, sliceAIChat };
+  return { bots, setBots, nextId, setNextId, addBot, updateBot, focusBot, deleteBot, askBot, renameBot, summariseBot, sliceAIChat, runResearchAgent };
 }
