@@ -1,4 +1,4 @@
-export type Provider = "openai" | "anthropic";
+export type Provider = "openai" | "anthropic" | "gemini";
 
 export type ModelConfig = {
   label: string;
@@ -64,6 +64,28 @@ export const MODEL_INFO = {
     inputPriceText: "$3.00 / 1M input tokens",
     outputPriceText: "$15.00 / 1M output tokens",
   },
+
+  "gemini-2.5-pro": {
+  label: "Gemini 2.5 Pro",
+  provider: "gemini",
+  backendId: "gemini-2.5-pro",
+  inputPricePer1M: 1.25,
+  cachedInputPricePer1M: 0.31,
+  outputPricePer1M: 10.0,
+  inputPriceText: "$1.25 / 1M input tokens",
+  outputPriceText: "$10.00 / 1M output tokens",
+},
+"gemini-2.5-flash": {
+  label: "Gemini 2.5 Flash",
+  provider: "gemini",
+  backendId: "gemini-2.5-flash",
+  inputPricePer1M: 0.15,
+  cachedInputPricePer1M: 0.037,
+  outputPricePer1M: 0.60,
+  inputPriceText: "$0.15 / 1M input tokens",
+  outputPriceText: "$0.60 / 1M output tokens",
+}
+
 } as const satisfies Record<string, ModelConfig>;
 
 export type ModelKey = keyof typeof MODEL_INFO;

@@ -1,0 +1,48 @@
+:root {
+  font-family: Inter, Segoe UI, Arial, sans-serif;
+  color: #f5f7fb;
+  background: #0b1020;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(86, 110, 255, 0.18), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(0, 214, 201, 0.12), transparent 28%),
+    linear-gradient(135deg, #0b1020 0%, #11182d 100%);
+}
+
+.background-glow {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(60px);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.glow-1 {
+  width: 260px;
+  height: 260px;
+  top: 8%;
+  left: 10%;
+  background: #4f7cff;
+}
+
+.glow-2 {
+  width: 240px;
+  height: 240px;
+  bottom: 10%;
+  right: 12%;
+  background: #00d4c8;
+}

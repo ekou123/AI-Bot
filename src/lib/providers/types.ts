@@ -10,8 +10,8 @@ export type AskResult = {
 }
 
 export interface AIProvider {
-  ask(backendId: string, messages: Message[]): Promise<AskResult>;
-  stream?(backendId: string, messages: Message[], onChunk: (text: string) => void): Promise<AskResult>;
+  ask(backendId: string, messages: Message[], system?: string): Promise<AskResult>;
+  stream?(backendId: string, messages: Message[], onChunk: (text: string) => void, system?: string): Promise<AskResult>;
 }
 
 export type Message = {
@@ -40,6 +40,7 @@ export type BotPanel = {
   title: string;
   model: ModelKey;
   prompt: string;
+  systemPrompt: string;
   reply: string;
   messages: Message[];
   loading: boolean;
@@ -56,6 +57,7 @@ export function createBot(id: number): BotPanel {
     title: `Bot ${id}`,
     model: "gpt-5.4-mini",
     prompt: "",
+    systemPrompt: "",
     reply: "",
     messages: [],
     loading: false,

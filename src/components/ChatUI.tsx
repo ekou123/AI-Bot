@@ -8,10 +8,12 @@ type ChatUIProps = {
   model: ModelKey;
   messages: Message[];
   prompt: string;
+  systemPrompt: string;
   loading: boolean;
   spent: number;
   isRenaming: boolean;
   onPromptChange: (v: string) => void;
+  onSystemPromptChange: (v: string) => void;
   onSend: () => void;
   onModelChange: (m: ModelKey) => void;
   onRename: (title: string) => void;
@@ -19,9 +21,9 @@ type ChatUIProps = {
   onSummarise: () => void;
   onSetRenaming: (v: boolean) => void;
   onTopbarMouseDown: (e: React.MouseEvent<HTMLDivElement>) => void;
-  headerActions?: React.ReactNode;  // goes inside topbar-left (Pop out)
-  overlayActions?: React.ReactNode; // goes above topbar (x button)
-  responseActions?: React.ReactNode; // goes above topbar (x button)
+  headerActions?: React.ReactNode;
+  overlayActions?: React.ReactNode;
+  responseActions?: React.ReactNode;
   actions?: React.ReactNode;
 };
 
@@ -45,8 +47,8 @@ function MessageBubble({ role, content }: { role: string; content: string }) {
 }
 
 export function ChatUI({
-  title, model, messages, prompt, loading, spent,
-  isRenaming, onPromptChange, onSend, onModelChange,
+  title, model, messages, prompt, systemPrompt, loading, spent,
+  isRenaming, onPromptChange, onSystemPromptChange, onSend, onModelChange,
   onRename, onSlice, onSummarise, onSetRenaming, onTopbarMouseDown, headerActions, overlayActions, responseActions, actions
 }: ChatUIProps) {
   const selectedModel = MODEL_INFO[model];
@@ -54,6 +56,7 @@ export function ChatUI({
   const renameRef = useRef<HTMLInputElement>(null);
   const [responseHeight, setResponseHeight] = useState(300);
   const [promptHeight, setPromptHeight] = useState(80);
+  const [showSystem, setShowSystem] = useState(false);
   const MIN_RESPONSE = 100;
   const MAX_RESPONSE = 800;
   const MIN_PROMPT = 60;
@@ -71,7 +74,9 @@ export function ChatUI({
   }
 
   return (
+    
     <section className="chat-card">
+      
       {overlayActions}
       <div className="topbar" onMouseDown={onTopbarMouseDown}>
         {headerActions}
@@ -116,6 +121,24 @@ export function ChatUI({
             <option key={m} value={m}>{MODEL_INFO[m].label}</option>
           ))}
         </select>
+
+        <div className="system-prompt-row">
+          <button
+            className={`system-toggle-btn${showSystem ? " active" : ""}${systemPrompt ? " has-value" : ""}`}
+            onClick={() => setShowSystem(v => !v)}
+          >
+            System {systemPrompt && !showSystem ? "•" : showSystem ? "▲" : "▼"}
+          </button>
+        </div>
+        {showSystem && (
+          <textarea
+            className="system-prompt-box"
+            value={systemPrompt}
+            onChange={(e) => onSystemPromptChange(e.target.value)}
+            placeholder="Give this bot a persona, instructions, or constraints..."
+            rows={3}
+          />
+        )}
 
         <div className="response-header">
           <span className="section-label">Response</span>

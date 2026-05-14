@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { BotPanel, SavedChat } from "../lib/providers/types";
 
 type Props = {
-  isOpen: boolean;
   savedChats: SavedChat[];
   favouriteIds: number[];
   bots: BotPanel[];
+  onNewChat: () => void;
   onReopenChat: (chat: SavedChat) => void;
   onDeleteHistoryChat: (id: number) => void;
   onToggleFavourite: (id: number) => void;
@@ -126,53 +126,90 @@ function FilterDropdown({historyFilter, setHistoryFilter, showFavourites, setSho
 
 }
 
-export function Sidebar({ isOpen, savedChats, bots, onReopenChat, onDeleteHistoryChat, onToggleFavourite, favouriteIds }: Props) {
+export function Sidebar({ savedChats, bots, onNewChat, onReopenChat, onDeleteHistoryChat, onToggleFavourite, favouriteIds }: Props) {
   const [historyFilter, setHistoryFilter] = useState("");
   const [sortMode, setSortMode] = useState<"date" | "alpha">("date");
   const [showFavourites, setShowFavourites] = useState(false);
 
   return (
-    <div className={`sidebar ${isOpen ? "sidebar-open" : ""}`}>
+    <div className="sidebar">
+
+      {/* Logo */}
+      <div className="nav-logo">
+        <span className="nav-logo-icon">🤖</span>
+        <div>
+          <div className="nav-logo-title">AI Workspace</div>
+          <div className="nav-logo-sub">Your intelligent co-pilot</div>
+        </div>
+      </div>
+
+      {/* New Chat */}
+      <div className="nav-new-chat-row">
+        <button className="nav-new-chat-btn" onClick={onNewChat}>
+          + New Chat
+        </button>
+      </div>
+
+      {/* Nav items — wire up onClick as needed */}
+      <nav className="nav-items">
+        <div className="nav-item">🏠 Home</div>
+        <div className="nav-item">
+          💬 Chats
+          {savedChats.length > 0 && <span className="nav-badge">{savedChats.length}</span>}
+        </div>
+        <div className="nav-item">⭐ Favourites</div>
+        <div className="nav-item">🕓 History</div>
+      </nav>
+
+      {/* Pinned / History */}
       <div className="history-heading-box">
         <div className="history-heading-row">
-        <h1 className="history-heading-text">History</h1>
-        <FilterDropdown
+          <span className="nav-section-label">Pinned Chats</span>
+          <FilterDropdown
             historyFilter={historyFilter}
             setHistoryFilter={setHistoryFilter}
             showFavourites={showFavourites}
             setShowFavourites={setShowFavourites}
-            ></FilterDropdown>
-            </div>
-        <div>Filter: <input
-            type="text"
-            value={historyFilter}
-            onChange={(e) => setHistoryFilter(e.target.value)}
           />
+        </div>
+        <input
+          className="nav-search-input"
+          type="text"
+          value={historyFilter}
+          onChange={(e) => setHistoryFilter(e.target.value)}
+          placeholder="Search chats..."
+        />
       </div>
-      </div>
+
       <div className="sidebar-content">
         {savedChats.length === 0 && (
-          <div className="history-empty">No chats yet. Send a message to save history.</div> 
+          <div className="history-empty">No chats yet. Send a message to save history.</div>
         )}
-        { 
-        savedChats
-        .filter(chat => !showFavourites || favouriteIds.includes(chat.id))
-        .filter(chat => chat.title.toLowerCase().includes(historyFilter.toLowerCase()))
-        .sort((a, b) => sortMode === "alpha"
-          ? a.title.localeCompare(b.title) 
-          : b.updated_at - a.updated_at)
-        .map((chat) => (
-          <ChatHistoryItem
-            key={chat.id}
-            chat={chat}
-            favouriteIds={favouriteIds}
-            isOpenCard={bots.some(b => b.id === chat.id)}
-            onReopenChat={onReopenChat}
-            onDeleteHistoryChat={onDeleteHistoryChat}
-            onToggleFavourite={onToggleFavourite}
-          />
-        ))}
+        {savedChats
+          .filter(chat => !showFavourites || favouriteIds.includes(chat.id))
+          .filter(chat => chat.title.toLowerCase().includes(historyFilter.toLowerCase()))
+          .sort((a, b) => sortMode === "alpha"
+            ? a.title.localeCompare(b.title)
+            : b.updated_at - a.updated_at)
+          .map((chat) => (
+            <ChatHistoryItem
+              key={chat.id}
+              chat={chat}
+              favouriteIds={favouriteIds}
+              isOpenCard={bots.some(b => b.id === chat.id)}
+              onReopenChat={onReopenChat}
+              onDeleteHistoryChat={onDeleteHistoryChat}
+              onToggleFavourite={onToggleFavourite}
+            />
+          ))}
       </div>
+
+      {/* Bottom card — e.g. upgrade prompt, user info */}
+      <div className="nav-bottom-card">
+        <div className="nav-bottom-card-title">Settings</div>
+        <div className="nav-bottom-card-sub">API keys &amp; preferences</div>
+      </div>
+
     </div>
   );
 }

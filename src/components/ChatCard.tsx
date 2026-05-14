@@ -98,6 +98,8 @@ export function ChatCard({ bot, onUpdate, onAsk, onFocus, onDelete, onPopOut, on
         spent={bot.spent}
         isRenaming={isRenaming}
         onPromptChange={(v) => onUpdate({ prompt: v })}
+        onSystemPromptChange={(v) => onUpdate({ systemPrompt: v })}
+        systemPrompt={bot.systemPrompt}
         onSend={onAsk}
         onModelChange={(m) => onUpdate({ model: m })}
         onRename={onRename}

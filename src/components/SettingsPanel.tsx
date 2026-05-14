@@ -10,6 +10,7 @@ export function SettingsPanel({ isOpen, onClose }: Props) {
   const [openaiKey, setOpenaiKey] = useState("");
   const [anthropicKey, setAnthropicKey] = useState("");
   const [tavilyKey, setTavilyKey] = useState("");
+  const [geminiKey, setGeminiKey] = useState("");
   const [saved, setSaved] = useState(false);
 
 
@@ -20,11 +21,13 @@ export function SettingsPanel({ isOpen, onClose }: Props) {
     getSetting("openai_api_key").then(v => setOpenaiKey(v ?? ""));
     getSetting("anthropic_api_key").then(v => setAnthropicKey(v ?? ""));
     getSetting("tavily_api_key").then(v => setTavilyKey(v ?? ""));
+    getSetting("gemini_api_key").then(v => setGeminiKey(v ?? ""));
   }, [isOpen]);
 
   async function handleSave() {
     await setSetting("openai_api_key", openaiKey.trim());
     await setSetting("anthropic_api_key", anthropicKey.trim());
+    await setSetting("gemini_api_key", geminiKey.trim());
     await setSetting("tavily_api_key", tavilyKey.trim());
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -59,6 +62,17 @@ export function SettingsPanel({ isOpen, onClose }: Props) {
             placeholder="sk-ant-..."
             value={anthropicKey}
             onChange={e => setAnthropicKey(e.target.value)}
+          />
+        </div>
+
+        <div className="settings-field">
+          <label className="section-label">Gemini API Key</label>
+          <input
+            className="settings-input"
+            type="password"
+            placeholder="AIza..."
+            value={geminiKey}
+            onChange={e => setGeminiKey(e.target.value)}
           />
         </div>
 

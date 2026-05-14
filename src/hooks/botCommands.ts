@@ -14,9 +14,11 @@ export function useBots(
   const [topZIndex, setTopZIndex] = useState(1);
   
 
-  function addBot() {
-    setBots(prev => [...prev, createBot(nextId)]);
+  function addBot(): number {
+    const id = nextId;
+    setBots(prev => [...prev, createBot(id)]);
     setNextId(prev => prev + 1);
+    return id;
   }
 
   async function summariseBot(id: number) {
@@ -209,7 +211,7 @@ export function useBots(
           msgs[msgs.length - 1] = { role: "assistant", content: reply };
           return { ...b, messages: msgs };
         }));
-      });
+      }, bot.systemPrompt || undefined);
 
       const messageCost = calculateMessageCost(bot.model, result.usage.input_tokens, result.usage.cached_input_tokens, result.usage.output_tokens);
       setSessionTotal(prev => prev + messageCost);

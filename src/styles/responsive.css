@@ -1,0 +1,27 @@
+@media (max-width: 700px) {
+  .chat-card {
+    min-width: 90vw;
+    width: 90vw;
+  }
+
+  .workspace-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .total-cost-card {
+    align-items: flex-start;
+  }
+
+  .topbar {
+    flex-wrap: wrap;
+  }
+
+  .actions {
+    justify-content: stretch;
+  }
+
+  .send-button {
+    width: 100%;
+  }
+}

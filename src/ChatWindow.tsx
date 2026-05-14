@@ -190,18 +190,20 @@ export function ChatWindow() {
       onSummarise={summariseMessages}
       onSetRenaming={setIsRenaming}
       headerActions={<>
-      <button onClick={popBack} className="delete-button">Pop back</button>
-      <button
-      className={`add-tab-button ${pinned ? "add-tab-button--active" : ""}`}
-      onClick={togglePin}
-    >
-      📌 {pinned ? "Pinned" : "Pin on top"}
-    </button>
+        <button onClick={popBack} className="delete-button">Pop back</button>
+        <button
+          className={`add-tab-button ${pinned ? "add-tab-button--active" : ""}`}
+          onClick={togglePin}
+        >
+          📌 {pinned ? "Pinned" : "Pin on top"}
+        </button>
       </>}
       responseActions={<>
         <button onClick={sliceMessages} className="slice-btn">Slice</button>
         <button onClick={summariseMessages} className="slice-btn">Summarise</button>
       </>} onTopbarMouseDown={function (e: React.MouseEvent<HTMLDivElement>): void {
+      } } systemPrompt={""} onSystemPromptChange={function (v: string): void {
+        throw new Error("Function not implemented.");
       } }  />
       
   );

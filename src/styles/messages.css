@@ -1,0 +1,91 @@
+.message {
+  position: relative;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  line-height: 1.5;
+}
+
+.message-copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #93a4c3;
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.message:hover .message-copy-btn {
+  opacity: 1;
+}
+
+.message-copy-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #f5f7fb;
+}
+
+.message-user {
+  background: rgba(91, 124, 255, 0.15);
+  border: 1px solid rgba(91, 124, 255, 0.25);
+  margin-left: 20%;
+}
+
+.message-assistant {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-right: 20%;
+}
+
+.message-tool {
+  background: rgba(212, 160, 23, 0.08);
+  border: 1px solid rgba(212, 160, 23, 0.2);
+  color: #b8a060;
+  font-size: 0.85rem;
+  font-family: "Fira Code", "Cascadia Code", monospace;
+  margin-left: 10%;
+  margin-right: 10%;
+}
+
+.message p { margin: 0 0 8px; }
+.message p:last-child { margin-bottom: 0; }
+.message ul, .message ol { margin: 4px 0 8px 16px; padding: 0; }
+.message li { margin-bottom: 2px; }
+
+.message code {
+  font-family: "Fira Code", "Cascadia Code", monospace;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.88em;
+}
+
+.message pre {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 12px;
+  overflow-x: auto;
+  margin: 6px 0;
+}
+
+.message pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.9em;
+}
+
+.message h1, .message h2, .message h3 { margin: 8px 0 4px; font-size: 1em; }
+.message a { color: #8ab4ff; }
+
+.message blockquote {
+  border-left: 3px solid rgba(255, 255, 255, 0.2);
+  margin: 4px 0;
+  padding-left: 10px;
+  color: #93a4c3;
+}
