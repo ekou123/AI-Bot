@@ -116,8 +116,26 @@ export function AppShell() {
 
   return (
     <div className="app-shell">
-      <div className="background-glow glow-1" />
-      <div className="background-glow glow-2" />
+
+      {/* Full-width top header */}
+      <header className="app-top-header">
+        <div className="app-top-logo">
+          <span className="app-top-logo-icon">⭐</span>
+          <span className="app-top-logo-text">AI Workspace</span>
+        </div>
+        <div className="app-top-search">
+          <span className="app-top-search-icon">🔍</span>
+          <input className="app-top-search-input" placeholder="Search anything..." />
+          <kbd className="app-top-search-kbd">Ctrl K</kbd>
+        </div>
+        <div className="app-top-actions">
+          <button className="app-top-new-btn" onClick={addBot}>+ New</button>
+          <button className="app-top-icon-btn" onClick={() => setSettingsOpen(true)} title="Settings">⚙</button>
+          <button className="app-top-icon-btn" title="Theme">○</button>
+          <button className="app-top-icon-btn" title="Notifications">🔔</button>
+          <div className="app-top-avatar">E</div>
+        </div>
+      </header>
 
       <div className="app-body">
         <Sidebar
@@ -128,32 +146,16 @@ export function AppShell() {
           onDeleteHistoryChat={handleDeleteHistoryChat}
           favouriteIds={favouriteIds}
           onToggleFavourite={handleToggleFavourite}
+          sessionTotal={sessionTotal}
         />
 
         <div className="workspace">
-          <div className="workspace-header">
-            <div className="tabs-bar">
-              <button className="add-tab-button" onClick={addBot}>
-                + Add Chat
-              </button>
-              <button
-                className="add-tab-button"
-                onClick={togglePin}
-                style={{ opacity: pinned ? 1 : 0.6 }}
-              >
-                {pinned ? "📌 Pinned" : "📌 Pin on top"}
-              </button>
-              <button className="add-tab-button" onClick={() => setSettingsOpen(true)}>
-                ⚙ Settings
-              </button>
-            </div>
-            <div className="total-cost-card">
-              <span className="total-cost-label">Session Total</span>
-              <span className="total-cost-value">${sessionTotal.toFixed(2)}</span>
-            </div>
-          </div>
-
-          <MainCanvas />
+          <MainCanvas
+            savedChats={savedChats}
+            sessionTotal={sessionTotal}
+            onNewChat={addBot}
+            onReopenChat={reopenChat}
+          />
         </div>
       </div>
 

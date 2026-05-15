@@ -1,10 +1,17 @@
 .sidebar {
-  width: 260px;
-  background: rgba(10, 15, 30, 0.95);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  width: 220px;
+  background: rgba(10, 15, 30, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  transition: width 0.2s ease;
+}
+
+.sidebar-collapsed {
+  width: 56px;
 }
 
 .sidebar-content {
@@ -81,6 +88,21 @@
   color: #8ea0c0;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.nav-item-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+}
+
+.nav-item-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .nav-item:hover {
@@ -337,4 +359,126 @@
   font-size: 0.82rem;
   outline: none;
   margin-top: 4px;
+}
+
+/* History panel */
+.nav-history-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0 8px 8px;
+  overflow: hidden;
+}
+
+/* Spacer */
+.nav-spacer {
+  flex: 1;
+}
+
+/* Pro Plan card */
+.nav-pro-card {
+  margin: 0 8px 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(86, 110, 255, 0.08);
+  border: 1px solid rgba(86, 110, 255, 0.18);
+  flex-shrink: 0;
+}
+
+.nav-pro-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.nav-pro-card-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #a0b4ff;
+}
+
+.nav-pro-card-cost {
+  font-size: 0.75rem;
+  color: #8ea0c0;
+  font-weight: 600;
+}
+
+.nav-pro-card-reset {
+  font-size: 0.7rem;
+  color: #4a5568;
+  margin-top: 1px;
+  margin-bottom: 8px;
+}
+
+.nav-pro-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.nav-pro-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #5b7cff, #7b61ff);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.nav-upgrade-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #5b7cff 0%, #7b61ff 100%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.nav-upgrade-btn:hover {
+  opacity: 0.88;
+}
+
+/* Collapse button */
+.nav-collapse-btn {
+  background: none;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  color: #4a5568;
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 10px 14px;
+  cursor: pointer;
+  text-align: left;
+  flex-shrink: 0;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.nav-collapse-btn:hover {
+  color: #8ea0c0;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.sidebar-collapsed .nav-collapse-btn {
+  text-align: center;
+  padding: 10px 0;
+}
+
+.sidebar-collapsed .nav-items {
+  padding: 4px 6px 8px;
+}
+
+.sidebar-collapsed .nav-item {
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.sidebar-collapsed .nav-badge {
+  display: none;
 }
