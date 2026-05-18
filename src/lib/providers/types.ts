@@ -35,6 +35,14 @@ export type SavedChat = {
   updated_at: number;
 };
 
+export type Workspace = {
+  id: number;
+  name: string;
+  icon: string;
+  system_prompt: string;
+  updated_at: string
+}
+
 export type BotPanel = {
   id: number;
   title: string;

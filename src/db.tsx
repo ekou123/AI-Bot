@@ -27,7 +27,32 @@ export async function setupDB(): Promise<Database> {
     
     )
     `)
-  // console.log("DB created at:", await (db as any).path?.());
+
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS file (
+        file_id INTEGER PRIMARY KEY,
+        file_path TEXT NOT NULL
+        )
+      `)
+
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS workspaces (
+          id PRIMARY KEY,
+          name TEXT,
+          icon TEXT,
+          system_prompt TEXT NOT NULL,
+          updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+        )
+        `)
+
+    await db.execute(`
+        CREATE TABLE IF NOT EXISTS context_file (
+          context_id PRIMARY KEY,
+          file_id PRIMARY KEY,
+          PRIMARY KEY(context_id, file_id)
+          FOREIGN KEY(file_id) REFERENCES file(file_id)
+        )
+      `)
   return db;
 }
 
