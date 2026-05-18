@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { PINNED_AGENTS } from "../../data/homeData";
 
+
 type WorkspaceFile = { id: number; name: string; description: string };
 
 type Workspace = {
@@ -51,7 +52,7 @@ function timeAgo(ts: number): string {
   return `${Math.floor(diff / 604800)}w ago`;
 }
 
-export function WorkspacesSection() {
+export function WorkspacesSection({ onOpenWorkspace }: { onOpenWorkspace: (ws: Workspace) => void }) {
   const [workspaces, setWorkspaces] = useState<Workspace[]>(INITIAL_WORKSPACES);
   const [showModal, setShowModal] = useState(false);
   const [modal, setModal] = useState<ModalState>(EMPTY_MODAL);
@@ -114,7 +115,7 @@ export function WorkspacesSection() {
         </div>
         <div className="home-workspace-grid">
           {workspaces.map(ws => (
-            <button key={ws.id} className="home-workspace-card">
+            <button key={ws.id} className="home-workspace-card" onClick={() => onOpenWorkspace(ws)}>
               <span className="home-workspace-icon">{ws.icon}</span>
               <div>
                 <div className="home-workspace-name">{ws.name}</div>

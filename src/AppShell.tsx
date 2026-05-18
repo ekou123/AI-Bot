@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { Sidebar } from "./components/Sidebar";
-import { createBot, type SavedChat } from "./lib/providers/types";
+import { createBot, Workspace, type SavedChat } from "./lib/providers/types";
 import type { ChatUpdatePayload } from "./ChatWindow";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen, emit } from "@tauri-apps/api/event";
 import { getDB, setupDB, deleteHistoryChat, getFavouriteChats, setFavouriteChat, removeFavouriteChat } from "./db";
 import { ModelKey } from "./lib/models";
@@ -11,19 +10,60 @@ import { useWindowManager } from "./hooks/useWindowManager";
 import { SettingsPanel } from "./components/SettingsPanel";
 import App from "./App";
 import { MainCanvas } from "./components/MainCanvas";
+import { WorkspacesCanvas } from "./components/workspaces/WorkspacesCanvas";
+
+type View =
+  | { type: "home" }
+  | { type: "workspace"; workspace: Workspace };
 
 export function AppShell() {
   const [savedChats, setSavedChats] = useState<SavedChat[]>([]);
   const [sessionTotal, setSessionTotal] = useState(0);
-  const [pinned, setPinned] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [favouriteIds, setFavouriteIds] = useState<number[]>([]);
+  const [view, setView] = useState<View>({ type: "home" });
 
   const { bots, setBots, setNextId, addBot, updateBot, focusBot, deleteBot, askBot, renameBot, summariseBot, sliceAIChat, runResearchAgent } =
     useBots(setSavedChats, setSessionTotal);
 
   const { pendingInits, popOutBot, reopenChat } =
     useWindowManager(bots, setBots, focusBot);
+
+  const NAV_HANDLERS: Partial<Record<string, () => void>> = {
+    Home: () => setView({ type: "home" }),
+    Settings: () => setSettingsOpen(true),
+  };
+
+  function handleNavigate(page: string) {
+    NAV_HANDLERS[page]?.();
+  }
+
+  function renderMain() {
+    switch (view.type) {
+      case "workspace":
+        return (
+          <WorkspacesCanvas
+            workspace={view.workspace}
+            savedChats={savedChats}
+            sessionTotal={sessionTotal}
+            onNewChat={addBot}
+            onClose={() => setView({ type: "home" })}
+            onReopenChat={reopenChat}
+          />
+        );
+      case "home":
+      default:
+        return (
+          <MainCanvas
+            savedChats={savedChats}
+            sessionTotal={sessionTotal}
+            onNewChat={addBot}
+            onReopenChat={reopenChat}
+            onOpenWorkspace={(ws) => setView({ type: "workspace", workspace: ws })}
+          />
+        );
+    }
+  }
 
   useEffect(() => {
     setupDB().then(async (db) => {
@@ -93,12 +133,6 @@ export function AppShell() {
     };
   }, []);
 
-  async function togglePin() {
-    const next = !pinned;
-    await getCurrentWindow().setAlwaysOnTop(next);
-    setPinned(next);
-  }
-
   async function handleDeleteHistoryChat(id: number) {
     await deleteHistoryChat(id);
     setSavedChats(prev => prev.filter(c => c.id !== id));
@@ -146,16 +180,11 @@ export function AppShell() {
           onDeleteHistoryChat={handleDeleteHistoryChat}
           favouriteIds={favouriteIds}
           onToggleFavourite={handleToggleFavourite}
-          sessionTotal={sessionTotal}
+          onNavigate={handleNavigate}
         />
 
         <div className="workspace">
-          <MainCanvas
-            savedChats={savedChats}
-            sessionTotal={sessionTotal}
-            onNewChat={addBot}
-            onReopenChat={reopenChat}
-          />
+          {renderMain()}
         </div>
       </div>
 

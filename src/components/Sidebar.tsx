@@ -5,11 +5,11 @@ type Props = {
   savedChats: SavedChat[];
   favouriteIds: number[];
   bots: BotPanel[];
-  sessionTotal: number;
   onNewChat: () => void;
   onReopenChat: (chat: SavedChat) => void;
   onDeleteHistoryChat: (id: number) => void;
   onToggleFavourite: (id: number) => void;
+  onNavigate: (page: string) => void;
 };
 
 type ItemProps = {
@@ -75,14 +75,10 @@ const NAV_ITEMS = [
   { icon: "⚙", label: "Settings" },
 ];
 
-export function Sidebar({ savedChats, bots, sessionTotal, onReopenChat, onDeleteHistoryChat, onToggleFavourite, favouriteIds }: Props) {
+export function Sidebar({ savedChats, bots, onReopenChat, onDeleteHistoryChat, onToggleFavourite, favouriteIds, onNavigate }: Props) {
   const [activeNav, setActiveNav] = useState("Home");
   const [historyFilter, setHistoryFilter] = useState("");
   const [collapsed, setCollapsed] = useState(false);
-
-  const spent = sessionTotal;
-  const limit = 20;
-  const pct = Math.min((spent / limit) * 100, 100);
 
   return (
     <div className={`sidebar${collapsed ? " sidebar-collapsed" : ""}`}>
@@ -92,7 +88,10 @@ export function Sidebar({ savedChats, bots, sessionTotal, onReopenChat, onDelete
           <div
             key={item.label}
             className={`nav-item${activeNav === item.label ? " nav-item-active" : ""}`}
-            onClick={() => setActiveNav(item.label)}
+            onClick={() => {
+              setActiveNav(item.label);
+              onNavigate(item.label);
+            }}
           >
             <span className="nav-item-icon">{item.icon}</span>
             {!collapsed && <span className="nav-item-label">{item.label}</span>}
@@ -134,30 +133,6 @@ export function Sidebar({ savedChats, bots, sessionTotal, onReopenChat, onDelete
           </div>
         </div>
       )}
-
-      <div className="nav-spacer" />
-
-      {/* Pro Plan card */}
-      {!collapsed && (
-        <div className="nav-pro-card">
-          <div className="nav-pro-card-header">
-            <span>👑</span>
-            <span className="nav-pro-card-title">Pro Plan</span>
-          </div>
-          <div className="nav-pro-card-cost">${spent.toFixed(2)} / ${limit.toFixed(2)}</div>
-          <div className="nav-pro-card-reset">Session usage</div>
-          <div className="nav-pro-bar">
-            <div className="nav-pro-bar-fill" style={{ width: `${pct}%` }} />
-          </div>
-          <button className="nav-upgrade-btn">Upgrade Plan</button>
-        </div>
-      )}
-
-      {/* Collapse button */}
-      <button className="nav-collapse-btn" onClick={() => setCollapsed(v => !v)}>
-        {collapsed ? "▶" : "◀ Collapse"}
-      </button>
-
     </div>
   );
 }

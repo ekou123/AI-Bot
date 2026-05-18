@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { SavedChat } from "../lib/providers/types";
+import type { SavedChat, Workspace } from "../lib/providers/types";
 import { WelcomeSection } from "./home/WelcomeSection";
 import { FeatureGrid } from "./home/FeatureGrid";
 import { ContextFilesSection } from "./home/ContextFilesSection";
@@ -9,14 +9,16 @@ import { RecentChatsSection } from "./home/RecentChatsSection";
 import { HomeInputBar } from "./home/HomeInputBar";
 import { RightPanel } from "./home/RightPanel";
 
+
 type Props = {
   savedChats: SavedChat[];
   sessionTotal: number;
   onNewChat: () => void;
   onReopenChat: (chat: SavedChat) => void;
+  onOpenWorkspace: (ws: Workspace) => void;
 };
 
-export function MainCanvas({ savedChats, sessionTotal, onNewChat, onReopenChat }: Props) {
+export function MainCanvas({ savedChats, sessionTotal, onNewChat, onReopenChat, onOpenWorkspace }: Props) {
   const [inputValue, setInputValue] = useState("");
 
   const recentChats = [...savedChats]
@@ -35,7 +37,7 @@ export function MainCanvas({ savedChats, sessionTotal, onNewChat, onReopenChat }
         <div className="home-scroll">
           <WelcomeSection />
           <FeatureGrid onNewChat={onNewChat} />
-          <WorkspacesSection />
+          <WorkspacesSection onOpenWorkspace={onOpenWorkspace} />
           <ContextFilesSection />
           <PinnedAgentsSection onNewChat={onNewChat} />
           <RecentChatsSection chats={recentChats} onReopenChat={onReopenChat} />

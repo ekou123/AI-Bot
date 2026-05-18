@@ -35,13 +35,17 @@ export type SavedChat = {
   updated_at: number;
 };
 
+export type WorkspaceFile = { id: number; name: string; description: string };
+
 export type Workspace = {
   id: number;
-  name: string;
   icon: string;
-  system_prompt: string;
-  updated_at: string
-}
+  name: string;
+  systemPrompt: string;
+  files: WorkspaceFile[];
+  agents: string[];
+  updatedAt: number;
+};
 
 export type BotPanel = {
   id: number;
