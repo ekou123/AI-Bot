@@ -1,5 +1,13 @@
 import { useState } from "react";
 import type { SavedChat } from "../lib/providers/types";
+import { WelcomeSection } from "./home/WelcomeSection";
+import { FeatureGrid } from "./home/FeatureGrid";
+import { ContextFilesSection } from "./home/ContextFilesSection";
+import { WorkspacesSection } from "./home/WorkspacesSection";
+import { PinnedAgentsSection } from "./home/PinnedAgentsSection";
+import { RecentChatsSection } from "./home/RecentChatsSection";
+import { HomeInputBar } from "./home/HomeInputBar";
+import { RightPanel } from "./home/RightPanel";
 
 type Props = {
   savedChats: SavedChat[];
@@ -9,15 +17,6 @@ type Props = {
   onReopenChat: (chat: SavedChat) => void;
 };
 
-function timeAgo(ts: number): string {
-  const diff = Math.floor(Date.now() / 1000 - ts);
-  if (diff < 60) return "just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-  return `${Math.floor(diff / 604800)}w ago`;
-}
-
 export function MainCanvas({ savedChats, sessionTotal, onNewChat, onOpenTuner, onReopenChat }: Props) {
   const [inputValue, setInputValue] = useState("");
 
@@ -25,26 +24,14 @@ export function MainCanvas({ savedChats, sessionTotal, onNewChat, onOpenTuner, o
     .sort((a, b) => b.updated_at - a.updated_at)
     .slice(0, 3);
 
-  const chatsToday = savedChats.filter(
-    c => Date.now() / 1000 - c.updated_at < 86400
-  ).length;
-
   function handleSend() {
     if (!inputValue.trim()) return;
     onNewChat();
     setInputValue("");
   }
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  }
-
   return (
     <main className="main-canvas">
-
       <div className="main-content">
         <div className="home-scroll">
 
@@ -63,7 +50,6 @@ export function MainCanvas({ savedChats, sessionTotal, onNewChat, onOpenTuner, o
               { icon: "📄", label: "Summarise Files", sub: "Upload & extract insights", action: onNewChat },
               { icon: "💻", label: "Code Helper", sub: "Write, review & debug code", action: onNewChat },
               { icon: "🔍", label: "Research Mode", sub: "Deep web research agent", action: onNewChat },
-              { icon: "🎻", label: "Violin Tuner", sub: "Open the dedicated tuner page", action: onOpenTuner },
             ].map(card => (
               <button key={card.label} className="home-feature-card" onClick={card.action}>
                 <span className="home-feature-icon">{card.icon}</span>
@@ -146,77 +132,9 @@ export function MainCanvas({ savedChats, sessionTotal, onNewChat, onOpenTuner, o
           </div>
 
         </div>
-
-        {/* Bottom input */}
-        <div className="home-input-bar">
-          <div className="home-input-box">
-            <button className="home-input-attach" title="Attach file">📎</button>
-            <textarea
-              className="home-input-textarea"
-              placeholder="Ask anything, or choose a feature above..."
-              rows={1}
-              value={inputValue}
-              onChange={e => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-            <div className="home-input-right">
-              <select className="home-input-model">
-                <option>GPT-4o</option>
-                <option>Claude Sonnet</option>
-                <option>Gemini 2.5 Pro</option>
-              </select>
-              <button className="home-input-send" title="Send" onClick={handleSend}>↑</button>
-            </div>
-          </div>
-          <div className="home-input-footer">Press Enter to send · Shift + Enter for new line</div>
-        </div>
+        <HomeInputBar value={inputValue} onChange={setInputValue} onSend={handleSend} />
       </div>
-
-      {/* Right panel */}
-      <aside className="right-panel">
-        <div className="rp-section">
-          <div className="rp-section-title">Quick Stats</div>
-          <div className="rp-stat-row">
-            <span className="rp-stat-label">Chats today</span>
-            <span className="rp-stat-value">{chatsToday}</span>
-          </div>
-          <div className="rp-stat-row">
-            <span className="rp-stat-label">Total chats</span>
-            <span className="rp-stat-value">{savedChats.length}</span>
-          </div>
-          <div className="rp-stat-row">
-            <span className="rp-stat-label">Session cost</span>
-            <span className="rp-stat-value">${sessionTotal.toFixed(2)}</span>
-          </div>
-        </div>
-
-        <div className="rp-section">
-          <div className="rp-section-title">Quick Prompts</div>
-          {[
-            "Summarise my last chat",
-            "Start a new research task",
-            "Review recent code changes",
-            "Draft a project brief",
-          ].map(p => (
-            <button key={p} className="rp-prompt-btn" onClick={onNewChat}>{p}</button>
-          ))}
-        </div>
-
-        <div className="rp-section">
-          <div className="rp-section-title">Active Models</div>
-          {[
-            { name: "GPT-4o", dot: "#10b981" },
-            { name: "Claude Sonnet", dot: "#7b61ff" },
-            { name: "Gemini 2.5", dot: "#06b6d4" },
-          ].map(m => (
-            <div key={m.name} className="rp-model-row">
-              <span className="rp-model-dot" style={{ background: m.dot }} />
-              <span className="rp-model-name">{m.name}</span>
-            </div>
-          ))}
-        </div>
-      </aside>
-
+      <RightPanel savedChats={savedChats} sessionTotal={sessionTotal} onNewChat={onNewChat} />
     </main>
   );
 }
