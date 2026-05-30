@@ -5,7 +5,6 @@ type Props = {
   savedChats: SavedChat[];
   favouriteIds: number[];
   bots: BotPanel[];
-  sessionTotal: number;
   activeNav: string;
   onNavigate: (label: string) => void;
   onNewChat: () => void;
@@ -78,13 +77,9 @@ const NAV_ITEMS = [
   { icon: "⚙", label: "Settings" },
 ];
 
-export function Sidebar({ savedChats, bots, sessionTotal, activeNav, onNavigate, onReopenChat, onDeleteHistoryChat, onToggleFavourite, favouriteIds }: Props) {
+export function Sidebar({ savedChats, bots, activeNav, onNavigate, onReopenChat, onDeleteHistoryChat, onToggleFavourite, favouriteIds }: Props) {
   const [historyFilter, setHistoryFilter] = useState("");
   const [collapsed, setCollapsed] = useState(false);
-
-  const spent = sessionTotal;
-  const limit = 20;
-  const pct = Math.min((spent / limit) * 100, 100);
 
   return (
     <div className={`sidebar${collapsed ? " sidebar-collapsed" : ""}`}>
@@ -138,22 +133,6 @@ export function Sidebar({ savedChats, bots, sessionTotal, activeNav, onNavigate,
       )}
 
       <div className="nav-spacer" />
-
-      {/* Pro Plan card */}
-      {!collapsed && (
-        <div className="nav-pro-card">
-          <div className="nav-pro-card-header">
-            <span>👑</span>
-            <span className="nav-pro-card-title">Pro Plan</span>
-          </div>
-          <div className="nav-pro-card-cost">${spent.toFixed(2)} / ${limit.toFixed(2)}</div>
-          <div className="nav-pro-card-reset">Session usage</div>
-          <div className="nav-pro-bar">
-            <div className="nav-pro-bar-fill" style={{ width: `${pct}%` }} />
-          </div>
-          <button className="nav-upgrade-btn">Upgrade Plan</button>
-        </div>
-      )}
 
       {/* Collapse button */}
       <button className="nav-collapse-btn" onClick={() => setCollapsed(v => !v)}>

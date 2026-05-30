@@ -1,4 +1,4 @@
-import type { AIProvider, AskResult, Message } from "./types";
+import type { AIProvider, Message } from "./types";
 import { getSetting } from "../../db";
 import { streamViaRust } from "./stream-helper";
 
@@ -11,7 +11,7 @@ function toGeminiMessages(messages: Message[]) {
     }));
 }
 
-function buildBody(backendId: string, messages: Message[], system?: string) {
+function buildBody(messages: Message[], system?: string) {
   return {
     contents: toGeminiMessages(messages),
     ...(system ? { systemInstruction: { parts: [{ text: system }] } } : {}),
@@ -27,7 +27,7 @@ export const geminiProvider: AIProvider = {
     await streamViaRust((chunk) => { reply += chunk; }, {
       url: `https://generativelanguage.googleapis.com/v1beta/models/${backendId}:streamGenerateContent?key=${apiKey}&alt=sse`,
       headers: {},
-      body: buildBody(backendId, messages, system),
+      body: buildBody(messages, system),
       textPath: ["candidates", "0", "content", "parts", "0", "text"],
     });
     return { reply, usage: { input_tokens: 0, cached_input_tokens: 0, output_tokens: 0 } };
@@ -39,7 +39,7 @@ export const geminiProvider: AIProvider = {
     return streamViaRust(onChunk, {
       url: `https://generativelanguage.googleapis.com/v1beta/models/${backendId}:streamGenerateContent?key=${apiKey}&alt=sse`,
       headers: {},
-      body: buildBody(backendId, messages, system),
+      body: buildBody(messages, system),
       textPath: ["candidates", "0", "content", "parts", "0", "text"],
     });
   },

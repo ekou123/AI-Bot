@@ -127,8 +127,8 @@ export function ViolinTuner() {
     const dataArray = dataArrayRef.current;
     if (!analyser || !audioContext || !dataArray) return;
 
-    analyser.getFloatTimeDomainData(dataArray);
-    const [pitch, clarityValue] = detector.findPitch(dataArray, audioContext.sampleRate);
+    analyser.getFloatTimeDomainData(dataArray as any);
+    const [pitch, clarityValue] = detector.findPitch(dataArray as any, audioContext.sampleRate);
 
     if (pitch > 0 && clarityValue > 0.1) {
       const centsDiff = 1200 * Math.log2(pitch / selectedNote.frequency);
@@ -208,14 +208,21 @@ export function ViolinTuner() {
     stopAudio();
   };
 
+  const detectedNoteName = () => {
+    if (cents === null) return "—";
+    if (Math.abs(cents) <= 5) return selectedNote.name;
+    return cents > 0 ? `${selectedNote.name} ♯` : `${selectedNote.name} ♭`;
+  };
+
   return (
     <section className="tuner-panel">
       <div className="tuner-header">
-        <div>
-          <h3>Violin Tuner</h3>
-          <p className="tuner-subtitle">Mic input + pitch detection + voice and drone feedback.</p>
+        <div className="tuner-header-copy">
+          <p className="tuner-small-label">Instrument Tuner</p>
+          <h1 className="tuner-main-title">Violin Tuner</h1>
+          <p className="tuner-subtitle">Professional tuning for any instrument.</p>
         </div>
-        <div>
+        <div className="tuner-header-actions">
           <button className="tuner-btn tuner-start" onClick={startAudio} disabled={isActive}>
             Start
           </button>
@@ -225,43 +232,142 @@ export function ViolinTuner() {
         </div>
       </div>
 
-      <div className="tuner-options">
-        {NOTE_TARGETS.map(note => (
+      <div className="tuner-instrument-tabs">
+        {[
+          { label: "Violin", icon: "🎻" },
+          { label: "Viola", icon: "🎻" },
+          { label: "Cello", icon: "🎻" },
+          { label: "Guitar", icon: "🎸" },
+          { label: "Ukulele", icon: "🪕" },
+          { label: "Mandolin", icon: "🎵" },
+          { label: "Bass", icon: "🎸" },
+          { label: "Custom", icon: "+" },
+        ].map((item) => (
           <button
-            key={note.name}
-            className={`tuner-note-button ${note.name === selectedNote.name ? "selected" : ""}`}
-            onClick={() => setSelectedNote(note)}
+            key={item.label}
             type="button"
+            className={`instrument-tab ${item.label === "Violin" ? "active" : ""}`}
           >
-            {note.name}
+            <span className="instrument-tab-icon">{item.icon}</span>
+            {item.label}
           </button>
         ))}
       </div>
 
-      <div className="tuner-status" style={{ borderColor: getStatusColor(status) }}>
-        <div className="tuner-status-row">
-          <span className="tuner-status-label">Target</span>
-          <span>{selectedNote.name} · {selectedNote.frequency.toFixed(2)} Hz</span>
+      <div className="tuner-grid">
+        <div className="tuner-card tuner-left-card">
+          <div className="card-title">String</div>
+          <div className="string-list">
+            {NOTE_TARGETS.map((note) => (
+              <button
+                key={note.name}
+                type="button"
+                className={`string-button ${note.name === selectedNote.name ? "selected" : ""}`}
+                onClick={() => setSelectedNote(note)}
+              >
+                <span>{note.name}</span>
+                <span>{note.frequency.toFixed(2)} Hz</span>
+              </button>
+            ))}
+          </div>
+          <button type="button" className="auto-detect-button">
+            Auto Detect
+          </button>
         </div>
-        <div className="tuner-status-row">
-          <span className="tuner-status-label">Detected</span>
-          <span>{detectedPitch ? `${detectedPitch.toFixed(1)} Hz` : "—"}</span>
+
+        <div className="tuner-card tuner-center-card">
+          <div className="gauge-card">
+            <div className="gauge-shell">
+              <div className="gauge-arc" />
+              <div className="gauge-arc gauge-arc--inner" />
+              <div className="gauge-mark gauge-mark--left">-50</div>
+              <div className="gauge-mark gauge-mark--center">0</div>
+              <div className="gauge-mark gauge-mark--right">+50</div>
+              <div
+                className="gauge-needle"
+                style={{
+                  transform: `rotate(${Math.max(-50, Math.min(50, (cents ?? 0) * 1.2))}deg)`,
+                }}
+              />
+              <div className="gauge-center" />
+            </div>
+
+            <div className="gauge-readout">
+              <div className="gauge-note">{selectedNote.name}</div>
+              <div className="gauge-frequency">
+                {detectedPitch ? `${detectedPitch.toFixed(1)} Hz` : `${selectedNote.frequency.toFixed(1)} Hz`}
+              </div>
+              <div className={`gauge-status gauge-status--${status.replace(" ", "-")}`}>
+                {status}
+              </div>
+            </div>
+
+            <div className="gauge-footer">
+              <div className="gauge-deviation">{cents !== null ? formatCents(cents) : "—"}</div>
+              <div className="gauge-message">{message}</div>
+              <div className="gauge-advice">{advice}</div>
+            </div>
+          </div>
         </div>
-        <div className="tuner-status-row">
-          <span className="tuner-status-label">Deviation</span>
-          <span>{cents !== null ? formatCents(cents) : "—"}</span>
-        </div>
-        <div className="tuner-status-row">
-          <span className="tuner-status-label">Status</span>
-          <span>{status}</span>
-        </div>
-        <div className="tuner-status-row">
-          <span className="tuner-status-label">Advice</span>
-          <span>{advice}</span>
+
+        <div className="tuner-card tuner-right-card" style={{ borderColor: getStatusColor(status) }}>
+          <div className="card-title">Details</div>
+          <div className="detail-row">
+            <span>Target Note</span>
+            <span>{selectedNote.name}</span>
+          </div>
+          <div className="detail-row">
+            <span>Detected Note</span>
+            <span>{detectedNoteName()}</span>
+          </div>
+          <div className="detail-row">
+            <span>Frequency</span>
+            <span>{detectedPitch ? `${detectedPitch.toFixed(1)} Hz` : "—"}</span>
+          </div>
+          <div className="detail-row">
+            <span>Deviation</span>
+            <span>{cents !== null ? formatCents(cents) : "—"}</span>
+          </div>
+          <div className="detail-row">
+            <span>Status</span>
+            <span>{status}</span>
+          </div>
+
+          <div className="detail-group">
+            <label className="detail-label">Calibration</label>
+            <select className="detail-select">
+              <option value="440">A4 = 440 Hz</option>
+              <option value="442">A4 = 442 Hz</option>
+            </select>
+          </div>
+
+          <div className="detail-group">
+            <label className="detail-label">Input Source</label>
+            <select className="detail-select">
+              <option>Microphone (Default)</option>
+            </select>
+          </div>
+
+          <div className="detail-group">
+            <label className="detail-label">Noise Filter</label>
+            <select className="detail-select">
+              <option>Medium</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <div className="tuner-message">{message}</div>
+      <div className="tuner-card tuner-bottom-card">
+        <div className="drone-card">
+          <div>
+            <div className="drone-label">Drone Tone</div>
+            <div className="drone-frequency">{selectedNote.frequency.toFixed(0)} Hz</div>
+          </div>
+          <button type="button" className="drone-play-button">
+            Play
+          </button>
+        </div>
+      </div>
     </section>
   );
 }

@@ -1,11 +1,5 @@
 import { useState } from "react";
 import type { SavedChat } from "../lib/providers/types";
-import { WelcomeSection } from "./home/WelcomeSection";
-import { FeatureGrid } from "./home/FeatureGrid";
-import { ContextFilesSection } from "./home/ContextFilesSection";
-import { WorkspacesSection } from "./home/WorkspacesSection";
-import { PinnedAgentsSection } from "./home/PinnedAgentsSection";
-import { RecentChatsSection } from "./home/RecentChatsSection";
 import { HomeInputBar } from "./home/HomeInputBar";
 import { RightPanel } from "./home/RightPanel";
 
@@ -16,6 +10,15 @@ type Props = {
   onOpenTuner: () => void;
   onReopenChat: (chat: SavedChat) => void;
 };
+
+function timeAgo(ts: number): string {
+  const diff = Math.floor(Date.now() / 1000 - ts);
+  if (diff < 60) return "just now";
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+  return `${Math.floor(diff / 604800)}w ago`;
+}
 
 export function MainCanvas({ savedChats, sessionTotal, onNewChat, onOpenTuner, onReopenChat }: Props) {
   const [inputValue, setInputValue] = useState("");
@@ -50,6 +53,7 @@ export function MainCanvas({ savedChats, sessionTotal, onNewChat, onOpenTuner, o
               { icon: "📄", label: "Summarise Files", sub: "Upload & extract insights", action: onNewChat },
               { icon: "💻", label: "Code Helper", sub: "Write, review & debug code", action: onNewChat },
               { icon: "🔍", label: "Research Mode", sub: "Deep web research agent", action: onNewChat },
+              { icon: "🎻", label: "Violin Tuner", sub: "Open the tuner page", action: onOpenTuner },
             ].map(card => (
               <button key={card.label} className="home-feature-card" onClick={card.action}>
                 <span className="home-feature-icon">{card.icon}</span>

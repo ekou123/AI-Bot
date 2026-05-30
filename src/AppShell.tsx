@@ -3,7 +3,6 @@ import { Sidebar } from "./components/Sidebar";
 import { ViolinTuner } from "./components/ViolinTuner";
 import { createBot, type SavedChat } from "./lib/providers/types";
 import type { ChatUpdatePayload } from "./ChatWindow";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen, emit } from "@tauri-apps/api/event";
 import { getDB, setupDB, deleteHistoryChat, getFavouriteChats, setFavouriteChat, removeFavouriteChat } from "./db";
 import { ModelKey } from "./lib/models";
@@ -16,7 +15,6 @@ import { MainCanvas } from "./components/MainCanvas";
 export function AppShell() {
   const [savedChats, setSavedChats] = useState<SavedChat[]>([]);
   const [sessionTotal, setSessionTotal] = useState(0);
-  const [pinned, setPinned] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [favouriteIds, setFavouriteIds] = useState<number[]>([]);
   const [activePanel, setActivePanel] = useState("Home");
@@ -95,12 +93,6 @@ export function AppShell() {
     };
   }, []);
 
-  async function togglePin() {
-    const next = !pinned;
-    await getCurrentWindow().setAlwaysOnTop(next);
-    setPinned(next);
-  }
-
   async function handleDeleteHistoryChat(id: number) {
     await deleteHistoryChat(id);
     setSavedChats(prev => prev.filter(c => c.id !== id));
@@ -150,7 +142,6 @@ export function AppShell() {
           onDeleteHistoryChat={handleDeleteHistoryChat}
           favouriteIds={favouriteIds}
           onToggleFavourite={handleToggleFavourite}
-          sessionTotal={sessionTotal}
         />
 
         <div className="workspace">

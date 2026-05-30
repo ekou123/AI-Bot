@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { MODEL_INFO, MODEL_OPTIONS, type ModelKey } from "./lib/models";
+import { type ModelKey } from "./lib/models";
 import { askAI } from "./lib/providers";
 import { calculateMessageCost } from "./lib/pricing";
 import type { Message } from "./lib/providers/types";
@@ -21,7 +21,6 @@ export function ChatWindow() {
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [spent, setSpent] = useState(0);
-  const [lastCost, setLastCost] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
   const chatIdRef = useRef<number>(0);
   const messagesRef = useRef<Message[]>([]);
@@ -29,7 +28,6 @@ export function ChatWindow() {
   const titleRef = useRef("New Chat");
 
   const [isRenaming, setIsRenaming] = useState(false);
-  const renameRef = useRef<HTMLInputElement>(null);
 
 
 
@@ -66,19 +64,6 @@ export function ChatWindow() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  async function commitRename() {
-    const newName = renameRef.current?.value;
-
-    if (!newName?.trim()) return;
-
-    titleRef.current = newName;
-    setTitle(newName);
-    getCurrentWindow().setTitle(newName);
-    await emit("chat:rename", { id: chatIdRef.current, title: newName });
-
-    setIsRenaming(false);
-  }
 
   async function togglePin() {
     const next = !pinned;
@@ -133,7 +118,6 @@ export function ChatWindow() {
       setMessages(finalMessages);
       messagesRef.current = finalMessages;
       setSpent(prev => prev + cost);
-      setLastCost(cost);
 
       let finalTitle = titleRef.current;
       if (currentMessages.length === 0) {
@@ -171,7 +155,6 @@ export function ChatWindow() {
     await getCurrentWindow().close();
   }
 
-  const selectedModel = MODEL_INFO[model];
 
   return (
   <ChatUI
@@ -201,10 +184,7 @@ export function ChatWindow() {
       responseActions={<>
         <button onClick={sliceMessages} className="slice-btn">Slice</button>
         <button onClick={summariseMessages} className="slice-btn">Summarise</button>
-      </>} onTopbarMouseDown={function (e: React.MouseEvent<HTMLDivElement>): void {
-      } } systemPrompt={""} onSystemPromptChange={function (v: string): void {
-        throw new Error("Function not implemented.");
-      } }  />
-      
+      </>} onTopbarMouseDown={() => {}} systemPrompt={""} onSystemPromptChange={() => {}}  />
   );
 }
+

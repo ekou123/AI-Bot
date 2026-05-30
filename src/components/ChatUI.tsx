@@ -49,7 +49,7 @@ function MessageBubble({ role, content }: { role: string; content: string }) {
 export function ChatUI({
   title, model, messages, prompt, systemPrompt, loading, spent,
   isRenaming, onPromptChange, onSystemPromptChange, onSend, onModelChange,
-  onRename, onSlice, onSummarise, onSetRenaming, onTopbarMouseDown, headerActions, overlayActions, responseActions, actions
+  onRename, onSetRenaming, onTopbarMouseDown, headerActions, overlayActions, responseActions, actions
 }: ChatUIProps) {
   const selectedModel = MODEL_INFO[model];
   const bottomRef = useRef<HTMLDivElement>(null);
