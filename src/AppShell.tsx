@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Sidebar } from "./components/Sidebar";
+import { ViolinTuner } from "./components/ViolinTuner";
 import { createBot, type SavedChat } from "./lib/providers/types";
 import type { ChatUpdatePayload } from "./ChatWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -18,6 +19,7 @@ export function AppShell() {
   const [pinned, setPinned] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [favouriteIds, setFavouriteIds] = useState<number[]>([]);
+  const [activePanel, setActivePanel] = useState("Home");
 
   const { bots, setBots, setNextId, addBot, updateBot, focusBot, deleteBot, askBot, renameBot, summariseBot, sliceAIChat, runResearchAgent } =
     useBots(setSavedChats, setSessionTotal);
@@ -141,6 +143,8 @@ export function AppShell() {
         <Sidebar
           savedChats={savedChats}
           bots={bots}
+          activeNav={activePanel}
+          onNavigate={setActivePanel}
           onNewChat={addBot}
           onReopenChat={reopenChat}
           onDeleteHistoryChat={handleDeleteHistoryChat}
@@ -150,12 +154,17 @@ export function AppShell() {
         />
 
         <div className="workspace">
-          <MainCanvas
-            savedChats={savedChats}
-            sessionTotal={sessionTotal}
-            onNewChat={addBot}
-            onReopenChat={reopenChat}
-          />
+          {activePanel === "Tuner" ? (
+            <ViolinTuner />
+          ) : (
+            <MainCanvas
+              savedChats={savedChats}
+              sessionTotal={sessionTotal}
+              onNewChat={addBot}
+              onReopenChat={reopenChat}
+              onOpenTuner={() => setActivePanel("Tuner")}
+            />
+          )}
         </div>
       </div>
 

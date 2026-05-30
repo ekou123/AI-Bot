@@ -6,6 +6,8 @@ type Props = {
   favouriteIds: number[];
   bots: BotPanel[];
   sessionTotal: number;
+  activeNav: string;
+  onNavigate: (label: string) => void;
   onNewChat: () => void;
   onReopenChat: (chat: SavedChat) => void;
   onDeleteHistoryChat: (id: number) => void;
@@ -65,6 +67,7 @@ function ChatHistoryItem({ chat, isOpenCard, onReopenChat, onDeleteHistoryChat, 
 const NAV_ITEMS = [
   { icon: "🏠", label: "Home" },
   { icon: "💬", label: "Chats" },
+  { icon: "🎻", label: "Tuner" },
   { icon: "⚖️", label: "Compare AI" },
   { icon: "🤖", label: "Agents" },
   { icon: "📦", label: "Workspaces" },
@@ -75,8 +78,7 @@ const NAV_ITEMS = [
   { icon: "⚙", label: "Settings" },
 ];
 
-export function Sidebar({ savedChats, bots, sessionTotal, onReopenChat, onDeleteHistoryChat, onToggleFavourite, favouriteIds }: Props) {
-  const [activeNav, setActiveNav] = useState("Home");
+export function Sidebar({ savedChats, bots, sessionTotal, activeNav, onNavigate, onReopenChat, onDeleteHistoryChat, onToggleFavourite, favouriteIds }: Props) {
   const [historyFilter, setHistoryFilter] = useState("");
   const [collapsed, setCollapsed] = useState(false);
 
@@ -92,7 +94,7 @@ export function Sidebar({ savedChats, bots, sessionTotal, onReopenChat, onDelete
           <div
             key={item.label}
             className={`nav-item${activeNav === item.label ? " nav-item-active" : ""}`}
-            onClick={() => setActiveNav(item.label)}
+            onClick={() => onNavigate(item.label)}
           >
             <span className="nav-item-icon">{item.icon}</span>
             {!collapsed && <span className="nav-item-label">{item.label}</span>}

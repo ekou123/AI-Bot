@@ -5,6 +5,7 @@ type Props = {
   savedChats: SavedChat[];
   sessionTotal: number;
   onNewChat: () => void;
+  onOpenTuner: () => void;
   onReopenChat: (chat: SavedChat) => void;
 };
 
@@ -17,7 +18,7 @@ function timeAgo(ts: number): string {
   return `${Math.floor(diff / 604800)}w ago`;
 }
 
-export function MainCanvas({ savedChats, sessionTotal, onNewChat, onReopenChat }: Props) {
+export function MainCanvas({ savedChats, sessionTotal, onNewChat, onOpenTuner, onReopenChat }: Props) {
   const [inputValue, setInputValue] = useState("");
 
   const recentChats = [...savedChats]
@@ -62,6 +63,7 @@ export function MainCanvas({ savedChats, sessionTotal, onNewChat, onReopenChat }
               { icon: "📄", label: "Summarise Files", sub: "Upload & extract insights", action: onNewChat },
               { icon: "💻", label: "Code Helper", sub: "Write, review & debug code", action: onNewChat },
               { icon: "🔍", label: "Research Mode", sub: "Deep web research agent", action: onNewChat },
+              { icon: "🎻", label: "Violin Tuner", sub: "Open the dedicated tuner page", action: onOpenTuner },
             ].map(card => (
               <button key={card.label} className="home-feature-card" onClick={card.action}>
                 <span className="home-feature-icon">{card.icon}</span>
