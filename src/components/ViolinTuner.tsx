@@ -143,7 +143,7 @@ const arcPath = (startDeg: number, endDeg: number, r: number) => {
 /* ------------------------------------------------------------------ */
 
 export function ViolinTuner() {
-  const [selectedInstrument] =
+  const [selectedInstrument, setSelectedInstrument] =
     useState<keyof typeof INSTRUMENT_PRESETS>("Violin");
 
   const [selectedNoteName, setSelectedNoteName] = useState<string>("G3");
@@ -506,7 +506,27 @@ export function ViolinTuner() {
 
   return (
     <section className="tuner-screen">
+      
       <div className="tuner-main">
+        <div className="instrument-tabs">
+    {(Object.keys(INSTRUMENT_PRESETS) as Array<keyof typeof INSTRUMENT_PRESETS>).map(
+      (instrument) => (
+        <button
+          key={instrument}
+          type="button"
+          className={`instrument-tab ${
+            selectedInstrument === instrument ? "is-active" : ""
+          }`}
+          onClick={() => {
+            setSelectedInstrument(instrument);
+            setSelectedNoteName(INSTRUMENT_PRESETS[instrument][0].name);
+          }}
+        >
+          {instrument}
+        </button>
+      )
+    )}
+  </div>
         <div className="tuner-cols">
           {/* STRINGS */}
           <div className="card strings-card">

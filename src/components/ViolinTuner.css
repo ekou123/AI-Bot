@@ -734,6 +734,45 @@
   }
 }
 
+.instrument-tabs {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.instrument-tab {
+  height: 38px;
+  padding: 0 18px;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 12px;
+  color: #aab3cc;
+  background: rgba(15, 21, 41, 0.72);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.instrument-tab:hover {
+  transform: translateY(-1px);
+  border-color: rgba(124, 92, 255, 0.55);
+  color: #ffffff;
+}
+
+.instrument-tab.is-active {
+  color: #ffffff;
+  border-color: rgba(125, 104, 255, 0.9);
+  background: linear-gradient(135deg, rgba(125, 104, 255, 0.35), rgba(74, 58, 180, 0.55));
+  box-shadow: 0 10px 26px rgba(105, 78, 238, 0.18);
+}
+
 @media (max-width: 620px) {
   .tuner-screen {
     padding: 14px;
@@ -781,3 +820,4 @@
     justify-content: center;
   }
 }
+
