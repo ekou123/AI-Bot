@@ -46,7 +46,7 @@ const INSTRUMENT_PRESETS: Record<string, NoteTarget[]> = {
     { name: "E5", frequency: 659.25 },
   ],
   Bass: [
-    { name: "E1", frequency: 41.20 },
+    { name: "E1", frequency: 41.2 },
     { name: "A1", frequency: 55.0 },
     { name: "D2", frequency: 73.42 },
     { name: "G2", frequency: 98.0 },
@@ -71,25 +71,31 @@ const getStatus = (cents: number | null) => {
 };
 
 const getTuningAdvice = (cents: number | null) => {
-  if (cents === null) return "Play the open string and listen for a strong pitch.";
+  if (cents === null) {
+    return "Play the open string and listen for a strong pitch.";
+  }
+
   const absCents = Math.abs(cents);
-  if (absCents > 30) return "Use the peg for a larger adjustment, then fine-tune with the tuner.";
-  if (absCents > 10) return "Use the fine tuner for a stronger adjustment toward the target.";
-  if (absCents > 5) return "Use the fine tuner gently to approach the target.";
+
+  if (absCents > 30) {
+    return "Use the peg for a larger adjustment, then fine-tune with the tuner.";
+  }
+
+  if (absCents > 10) {
+    return "Use the fine tuner for a stronger adjustment toward the target.";
+  }
+
+  if (absCents > 5) {
+    return "Use the fine tuner gently to approach the target.";
+  }
+
   return "String is nearly in tune — use the fine tuner to lock it in.";
 };
 
-const speakStatus = (message: string) => {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
-  const utterance = new SpeechSynthesisUtterance(message);
-  utterance.rate = 1.0;
-  utterance.pitch = 1.0;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
-};
-
 export function ViolinTuner() {
-  const [selectedInstrument, setSelectedInstrument] = useState<keyof typeof INSTRUMENT_PRESETS>("Violin");
+  const [selectedInstrument, setSelectedInstrument] =
+    useState<keyof typeof INSTRUMENT_PRESETS>("Violin");
+
   const [selectedNoteName, setSelectedNoteName] = useState<string>("A4");
   const [calibrationHz, setCalibrationHz] = useState<number>(440);
   const [inputSource, setInputSource] = useState<string>("Microphone (Default)");
@@ -97,29 +103,37 @@ export function ViolinTuner() {
   const [pitchDetectionMode, setPitchDetectionMode] = useState<string>("Default");
   const [showNoteNames, setShowNoteNames] = useState<boolean>(true);
   const [showCenterIndicator, setShowCenterIndicator] = useState<boolean>(true);
-  const [isActive, setIsActive] = useState(false);
+
+  const [isActive, setIsActive] = useState<boolean>(false);
   const [detectedPitch, setDetectedPitch] = useState<number | null>(null);
   const [cents, setCents] = useState<number | null>(null);
   const [status, setStatus] = useState<string>("idle");
   const [message, setMessage] = useState<string>("Ready");
-  const [advice, setAdvice] = useState<string>("Play the open string and listen for a strong pitch.");
+  const [advice, setAdvice] = useState<string>(
+    "Play the open string and listen for a strong pitch."
+  );
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+
   const oscillatorRef = useRef<OscillatorNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
+
   const tapIntervalRef = useRef<number | null>(null);
-  const rafRef = useRef<number | null>(null);
-  const dataArrayRef = useRef<Float32Array | null>(null);
-  const lastVoiceRef = useRef<string>("");
   const currentTapIntervalMsRef = useRef<number | null>(null);
   const lastTapSideRef = useRef<"flat" | "sharp" | null>(null);
   const wasInTuneRef = useRef<boolean>(false);
 
+  const rafRef = useRef<number | null>(null);
+  const dataArrayRef = useRef<Float32Array | null>(null);
+
   const currentNotes = useMemo(() => {
-    const preset = INSTRUMENT_PRESETS[selectedInstrument] ?? INSTRUMENT_PRESETS.Violin;
+    const preset =
+      INSTRUMENT_PRESETS[selectedInstrument] ?? INSTRUMENT_PRESETS.Violin;
+
     const ratio = calibrationHz / 440;
+
     return preset.map((note) => ({
       name: note.name,
       frequency: note.frequency * ratio,
@@ -127,14 +141,30 @@ export function ViolinTuner() {
   }, [selectedInstrument, calibrationHz]);
 
   const selectedNote = useMemo(
-    () => currentNotes.find((note) => note.name === selectedNoteName) ?? currentNotes[0],
+    () =>
+      currentNotes.find((note) => note.name === selectedNoteName) ??
+      currentNotes[0],
     [currentNotes, selectedNoteName]
   );
 
   const detector = useMemo(
-    () => new PitchDetector(2048, (inputLength: number) => new Float32Array(inputLength)),
+    () =>
+      new PitchDetector(
+        2048,
+        (inputLength: number) => new Float32Array(inputLength)
+      ),
     []
   );
+
+  const clearTapFeedback = () => {
+    if (tapIntervalRef.current !== null) {
+      window.clearInterval(tapIntervalRef.current);
+      tapIntervalRef.current = null;
+    }
+
+    currentTapIntervalMsRef.current = null;
+    lastTapSideRef.current = null;
+  };
 
   const autoDetectString = () => {
     if (!detectedPitch) {
@@ -142,10 +172,19 @@ export function ViolinTuner() {
       return;
     }
 
-    const nearest = currentNotes.reduce((closest, note) => {
-      const diff = Math.abs(1200 * Math.log2(detectedPitch / note.frequency));
-      return diff < closest.diff ? { note, diff } : closest;
-    }, { note: currentNotes[0], diff: Infinity as number }).note;
+    const nearest = currentNotes.reduce(
+      (closest, note) => {
+        const diff = Math.abs(
+          1200 * Math.log2(detectedPitch / note.frequency)
+        );
+
+        return diff < closest.diff ? { note, diff } : closest;
+      },
+      {
+        note: currentNotes[0],
+        diff: Infinity as number,
+      }
+    ).note;
 
     setSelectedNoteName(nearest.name);
     setMessage(`Auto-detected ${nearest.name}.`);
@@ -156,27 +195,31 @@ export function ViolinTuner() {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     }
+
     if (oscillatorRef.current) {
       oscillatorRef.current.stop();
       oscillatorRef.current.disconnect();
       oscillatorRef.current = null;
     }
+
     if (gainRef.current) {
       gainRef.current.disconnect();
       gainRef.current = null;
     }
+
     if (sourceRef.current) {
       sourceRef.current.disconnect();
       sourceRef.current = null;
     }
+
     if (audioContextRef.current) {
       audioContextRef.current.close();
       audioContextRef.current = null;
     }
-    if (tapIntervalRef.current !== null) {
-      window.clearInterval(tapIntervalRef.current);
-      tapIntervalRef.current = null;
-    }
+
+    clearTapFeedback();
+    wasInTuneRef.current = false;
+
     setDetectedPitch(null);
     setCents(null);
     setStatus("idle");
@@ -228,7 +271,6 @@ export function ViolinTuner() {
 
     tapOsc.start(now);
 
-    // Softer, shorter tap
     tapGain.gain.setValueAtTime(0.0001, now);
     tapGain.gain.linearRampToValueAtTime(0.035, now + 0.005);
     tapGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.055);
@@ -246,15 +288,8 @@ export function ViolinTuner() {
 
     const absCents = Math.abs(centsDiff);
 
-    // Stop tapping when close enough to in tune
     if (absCents <= 5) {
-      if (tapIntervalRef.current !== null) {
-        window.clearInterval(tapIntervalRef.current);
-        tapIntervalRef.current = null;
-      }
-
-      currentTapIntervalMsRef.current = null;
-      lastTapSideRef.current = null;
+      clearTapFeedback();
 
       if (!wasInTuneRef.current) {
         playInTuneChime();
@@ -271,14 +306,8 @@ export function ViolinTuner() {
     let intervalMs: number;
 
     if (side === "flat") {
-      // Flat / left side = slow tapping
-      // Very flat: around 1100ms
-      // Slightly flat: around 650ms
       intervalMs = 1100 - Math.min(absCents, 50) * 9;
     } else {
-      // Sharp / right side = faster tapping
-      // Slightly sharp: around 450ms
-      // Very sharp: around 150ms
       intervalMs = 450 - Math.min(absCents, 50) * 6;
     }
 
@@ -292,15 +321,11 @@ export function ViolinTuner() {
 
     const sideChanged = previousSide !== side;
 
-    // Important: do not restart the tap every animation frame
     if (!intervalChanged && !sideChanged) {
       return;
     }
 
-    if (tapIntervalRef.current !== null) {
-      window.clearInterval(tapIntervalRef.current);
-      tapIntervalRef.current = null;
-    }
+    clearTapFeedback();
 
     currentTapIntervalMsRef.current = intervalMs;
     lastTapSideRef.current = side;
@@ -309,63 +334,47 @@ export function ViolinTuner() {
     tapIntervalRef.current = window.setInterval(playTap, intervalMs);
   };
 
-  useEffect(() => {
-    return () => {
-      stopAudio();
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!isActive) return;
-    if (!audioContextRef.current || !oscillatorRef.current) return;
-    oscillatorRef.current.frequency.setTargetAtTime(selectedNote.frequency, audioContextRef.current.currentTime, 0.02);
-  }, [selectedNote, isActive]);
-
-  useEffect(() => {
-    setSelectedNoteName(INSTRUMENT_PRESETS[selectedInstrument]?.[0]?.name ?? "A4");
-  }, [selectedInstrument]);
-
   const updatePitch = () => {
     const analyser = analyserRef.current;
     const audioContext = audioContextRef.current;
     const dataArray = dataArrayRef.current;
+
     if (!analyser || !audioContext || !dataArray) return;
 
     analyser.getFloatTimeDomainData(dataArray as any);
-    const [pitch, clarityValue] = detector.findPitch(dataArray as any, audioContext.sampleRate);
+
+    const [pitch, clarityValue] = detector.findPitch(
+      dataArray as any,
+      audioContext.sampleRate
+    );
 
     if (pitch > 0 && clarityValue > 0.1) {
       const centsDiff = 1200 * Math.log2(pitch / selectedNote.frequency);
       const nextStatus = getStatus(centsDiff);
       const nextAdvice = getTuningAdvice(centsDiff);
+
       setDetectedPitch(pitch);
       setCents(centsDiff);
       setStatus(nextStatus);
-      setMessage(nextStatus === "in tune" ? "Locking in..." : `${nextStatus} by ${formatCents(centsDiff)}`);
+      setMessage(
+        nextStatus === "in tune"
+          ? "Locking in..."
+          : `${nextStatus} by ${formatCents(centsDiff)}`
+      );
       setAdvice(nextAdvice);
+
       updateBeat(centsDiff);
     } else {
       const nextAdvice = getTuningAdvice(null);
-      
+
       setDetectedPitch(null);
       setCents(null);
       setStatus("no signal");
       setMessage("No strong pitch detected");
       setAdvice(nextAdvice);
-      if (tapIntervalRef.current !== null) {
-        window.clearInterval(tapIntervalRef.current);
-        tapIntervalRef.current = null;
-      }
-      currentTapIntervalMsRef.current = null;
-      lastTapSideRef.current = null;
 
-      if (lastVoiceRef.current !== "no signal") {
-        lastVoiceRef.current = "no signal";
-        speakStatus("Listening...");
-      }
+      clearTapFeedback();
+      wasInTuneRef.current = false;
     }
 
     rafRef.current = requestAnimationFrame(updatePitch);
@@ -373,41 +382,39 @@ export function ViolinTuner() {
 
   const startAudio = async () => {
     if (isActive) return;
+
     if (!navigator.mediaDevices?.getUserMedia) {
       setMessage("Microphone access is not available in this browser.");
       return;
     }
 
-    const audioContext = new AudioContext();
-    await audioContext.resume();
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const sourceNode = audioContext.createMediaStreamSource(stream);
-    const analyserNode = audioContext.createAnalyser();
-    analyserNode.fftSize = 2048;
-    analyserNode.smoothingTimeConstant = 0.8;
-    sourceNode.connect(analyserNode);
+    try {
+      const audioContext = new AudioContext();
+      await audioContext.resume();
 
-    // const oscillator = audioContext.createOscillator();
-    // const gainNode = audioContext.createGain();
-    // oscillator.type = "sine";
-    // oscillator.frequency.value = selectedNote.frequency;
-    // gainNode.gain.value = 0.05;
-    // oscillator.connect(gainNode);
-    // gainNode.connect(audioContext.destination);
-    // oscillator.start();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const sourceNode = audioContext.createMediaStreamSource(stream);
+      const analyserNode = audioContext.createAnalyser();
 
-    audioContextRef.current = audioContext;
-    sourceRef.current = sourceNode;
-    analyserRef.current = analyserNode;
-    // oscillatorRef.current = oscillator;
-    // gainRef.current = gainNode;
-    dataArrayRef.current = new Float32Array(analyserNode.fftSize);
+      analyserNode.fftSize = 2048;
+      analyserNode.smoothingTimeConstant = 0.8;
 
-    setIsActive(true);
-    setStatus("listening");
-    setMessage("Listening for your violin note...");
-    lastVoiceRef.current = "";
-    rafRef.current = requestAnimationFrame(updatePitch);
+      sourceNode.connect(analyserNode);
+
+      audioContextRef.current = audioContext;
+      sourceRef.current = sourceNode;
+      analyserRef.current = analyserNode;
+      dataArrayRef.current = new Float32Array(analyserNode.fftSize);
+
+      setIsActive(true);
+      setStatus("listening");
+      setMessage(`Listening for your ${selectedInstrument.toLowerCase()} note...`);
+
+      rafRef.current = requestAnimationFrame(updatePitch);
+    } catch (error) {
+      setMessage("Could not access your microphone.");
+      setStatus("idle");
+    }
   };
 
   const stopTuner = () => {
@@ -421,19 +428,43 @@ export function ViolinTuner() {
     return cents > 0 ? `${selectedNote.name} ♯` : `${selectedNote.name} ♭`;
   };
 
+  useEffect(() => {
+    return () => {
+      stopAudio();
+    };
+  }, []);
+
+  useEffect(() => {
+    setSelectedNoteName(
+      INSTRUMENT_PRESETS[selectedInstrument]?.[0]?.name ?? "A4"
+    );
+  }, [selectedInstrument]);
+
   return (
     <section className="tuner-panel">
       <div className="tuner-header">
         <div className="tuner-header-copy">
           <p className="tuner-small-label">Instrument Tuner</p>
           <h1 className="tuner-main-title">{selectedInstrument} Tuner</h1>
-          <p className="tuner-subtitle">Professional tuning for any instrument.</p>
+          <p className="tuner-subtitle">
+            Professional tuning for any instrument.
+          </p>
         </div>
+
         <div className="tuner-header-actions">
-          <button className="tuner-btn tuner-start" onClick={startAudio} disabled={isActive}>
+          <button
+            className="tuner-btn tuner-start"
+            onClick={startAudio}
+            disabled={isActive}
+          >
             Start
           </button>
-          <button className="tuner-btn tuner-stop" onClick={stopTuner} disabled={!isActive}>
+
+          <button
+            className="tuner-btn tuner-stop"
+            onClick={stopTuner}
+            disabled={!isActive}
+          >
             Stop
           </button>
         </div>
@@ -453,8 +484,14 @@ export function ViolinTuner() {
           <button
             key={item.label}
             type="button"
-            className={`instrument-tab ${item.label === selectedInstrument ? "active" : ""}`}
-            onClick={() => setSelectedInstrument(item.label as keyof typeof INSTRUMENT_PRESETS)}
+            className={`instrument-tab ${
+              item.label === selectedInstrument ? "active" : ""
+            }`}
+            onClick={() =>
+              setSelectedInstrument(
+                item.label as keyof typeof INSTRUMENT_PRESETS
+              )
+            }
           >
             <span className="instrument-tab-icon">{item.icon}</span>
             {item.label}
@@ -465,12 +502,15 @@ export function ViolinTuner() {
       <div className="tuner-grid">
         <div className="tuner-card tuner-left-card">
           <div className="card-title">String</div>
+
           <div className="string-list">
             {currentNotes.map((note) => (
               <button
                 key={note.name}
                 type="button"
-                className={`string-button ${note.name === selectedNote.name ? "selected" : ""}`}
+                className={`string-button ${
+                  note.name === selectedNote.name ? "selected" : ""
+                }`}
                 onClick={() => setSelectedNoteName(note.name)}
               >
                 <span>{note.name}</span>
@@ -478,15 +518,25 @@ export function ViolinTuner() {
               </button>
             ))}
           </div>
-          <button type="button" className="auto-detect-button" onClick={autoDetectString}>
+
+          <button
+            type="button"
+            className="auto-detect-button"
+            onClick={autoDetectString}
+          >
             Auto Detect
           </button>
 
           <div className="panel-status">
-            <span className={`status-dot status-dot--${status.replace(" ", "-")}`} />
+            <span
+              className={`status-dot status-dot--${status.replace(" ", "-")}`}
+            />
+
             <div>
               <div className="status-label">Status</div>
-              <div className="status-value">{status === "idle" ? "Ready" : message}</div>
+              <div className="status-value">
+                {status === "idle" ? "Ready" : message}
+              </div>
             </div>
           </div>
         </div>
@@ -496,30 +546,50 @@ export function ViolinTuner() {
             <div className="gauge-shell">
               <div className="gauge-arc" />
               <div className="gauge-arc gauge-arc--inner" />
+
               <div className="gauge-mark gauge-mark--left">-50</div>
               <div className="gauge-mark gauge-mark--center">0</div>
               <div className="gauge-mark gauge-mark--right">+50</div>
+
               <div
                 className="gauge-needle"
                 style={{
-                  transform: `rotate(${Math.max(-50, Math.min(50, (cents ?? 0) * 1.2))}deg)`,
+                  transform: `rotate(${Math.max(
+                    -50,
+                    Math.min(50, (cents ?? 0) * 1.2)
+                  )}deg)`,
                 }}
               />
+
               {showCenterIndicator && <div className="gauge-center" />}
             </div>
 
             <div className="gauge-readout">
-              <div className="gauge-note">{showNoteNames ? selectedNote.name : "—"}</div>
-              <div className="gauge-frequency">
-                {detectedPitch ? `${detectedPitch.toFixed(1)} Hz` : `${selectedNote.frequency.toFixed(1)} Hz`}
+              <div className="gauge-note">
+                {showNoteNames ? selectedNote.name : "—"}
               </div>
-              <div className={`gauge-status gauge-status--${status.replace(" ", "-")}`}>
+
+              <div className="gauge-frequency">
+                {detectedPitch
+                  ? `${detectedPitch.toFixed(1)} Hz`
+                  : `${selectedNote.frequency.toFixed(1)} Hz`}
+              </div>
+
+              <div
+                className={`gauge-status gauge-status--${status.replace(
+                  " ",
+                  "-"
+                )}`}
+              >
                 {status}
               </div>
             </div>
 
             <div className="gauge-footer">
-              <div className="gauge-deviation">{cents !== null ? formatCents(cents) : "—"}</div>
+              <div className="gauge-deviation">
+                {cents !== null ? formatCents(cents) : "—"}
+              </div>
+
               <div className="gauge-message">{message}</div>
               <div className="gauge-advice">{advice}</div>
             </div>
@@ -529,13 +599,22 @@ export function ViolinTuner() {
                 <span className="summary-label">Target Note</span>
                 <strong>{selectedNote.name}</strong>
               </div>
+
               <div className="summary-card">
                 <span className="summary-label">Detected Note</span>
                 <strong>{detectedNoteName()}</strong>
               </div>
+
               <div className="summary-card">
                 <span className="summary-label">Status</span>
-                <strong className={`summary-status summary-status--${status.replace(" ", "-")}`}>{status}</strong>
+                <strong
+                  className={`summary-status summary-status--${status.replace(
+                    " ",
+                    "-"
+                  )}`}
+                >
+                  {status}
+                </strong>
               </div>
             </div>
           </div>
@@ -546,7 +625,11 @@ export function ViolinTuner() {
 
           <div className="detail-group">
             <label className="detail-label">Calibration</label>
-            <select className="detail-select" value={calibrationHz} onChange={(event) => setCalibrationHz(Number(event.target.value))}>
+            <select
+              className="detail-select"
+              value={calibrationHz}
+              onChange={(event) => setCalibrationHz(Number(event.target.value))}
+            >
               <option value={432}>A4 = 432 Hz</option>
               <option value={440}>A4 = 440 Hz</option>
               <option value={442}>A4 = 442 Hz</option>
@@ -556,7 +639,11 @@ export function ViolinTuner() {
 
           <div className="detail-group">
             <label className="detail-label">Input Source</label>
-            <select className="detail-select" value={inputSource} onChange={(event) => setInputSource(event.target.value)}>
+            <select
+              className="detail-select"
+              value={inputSource}
+              onChange={(event) => setInputSource(event.target.value)}
+            >
               <option>Microphone (Default)</option>
               <option>External Audio Interface</option>
               <option>System Input</option>
@@ -565,7 +652,11 @@ export function ViolinTuner() {
 
           <div className="detail-group">
             <label className="detail-label">Noise Filter</label>
-            <select className="detail-select" value={noiseFilter} onChange={(event) => setNoiseFilter(event.target.value)}>
+            <select
+              className="detail-select"
+              value={noiseFilter}
+              onChange={(event) => setNoiseFilter(event.target.value)}
+            >
               <option>Low</option>
               <option>Medium</option>
               <option>High</option>
@@ -576,9 +667,14 @@ export function ViolinTuner() {
 
           <div className="settings-section">
             <div className="section-title">Advanced</div>
+
             <div className="detail-group">
               <label className="detail-label">Pitch Detection</label>
-              <select className="detail-select" value={pitchDetectionMode} onChange={(event) => setPitchDetectionMode(event.target.value)}>
+              <select
+                className="detail-select"
+                value={pitchDetectionMode}
+                onChange={(event) => setPitchDetectionMode(event.target.value)}
+              >
                 <option>Default</option>
                 <option>Fast</option>
                 <option>Stable</option>
@@ -588,10 +684,17 @@ export function ViolinTuner() {
             <div className="toggle-row">
               <div>
                 <div className="toggle-label">Show Note Names</div>
-                <div className="toggle-description">Display active note names on the tuner readout.</div>
+                <div className="toggle-description">
+                  Display active note names on the tuner readout.
+                </div>
               </div>
+
               <label className="toggle-switch">
-                <input type="checkbox" checked={showNoteNames} onChange={() => setShowNoteNames((value) => !value)} />
+                <input
+                  type="checkbox"
+                  checked={showNoteNames}
+                  onChange={() => setShowNoteNames((value) => !value)}
+                />
                 <span className="toggle-slider" />
               </label>
             </div>
@@ -599,22 +702,33 @@ export function ViolinTuner() {
             <div className="toggle-row">
               <div>
                 <div className="toggle-label">Center Indicator</div>
-                <div className="toggle-description">Highlight the tuning center for easier alignment.</div>
+                <div className="toggle-description">
+                  Highlight the tuning center for easier alignment.
+                </div>
               </div>
+
               <label className="toggle-switch">
-                <input type="checkbox" checked={showCenterIndicator} onChange={() => setShowCenterIndicator((value) => !value)} />
+                <input
+                  type="checkbox"
+                  checked={showCenterIndicator}
+                  onChange={() => setShowCenterIndicator((value) => !value)}
+                />
                 <span className="toggle-slider" />
               </label>
             </div>
 
-            <button type="button" className="settings-reset" onClick={() => {
-              setCalibrationHz(440);
-              setInputSource("Microphone (Default)");
-              setNoiseFilter("Medium");
-              setPitchDetectionMode("Default");
-              setShowNoteNames(true);
-              setShowCenterIndicator(true);
-            }}>
+            <button
+              type="button"
+              className="settings-reset"
+              onClick={() => {
+                setCalibrationHz(440);
+                setInputSource("Microphone (Default)");
+                setNoiseFilter("Medium");
+                setPitchDetectionMode("Default");
+                setShowNoteNames(true);
+                setShowCenterIndicator(true);
+              }}
+            >
               Reset to defaults
             </button>
           </div>
@@ -625,8 +739,11 @@ export function ViolinTuner() {
         <div className="drone-card">
           <div>
             <div className="drone-label">Drone Tone</div>
-            <div className="drone-frequency">{selectedNote.frequency.toFixed(0)} Hz</div>
+            <div className="drone-frequency">
+              {selectedNote.frequency.toFixed(0)} Hz
+            </div>
           </div>
+
           <button type="button" className="drone-play-button">
             Play
           </button>
