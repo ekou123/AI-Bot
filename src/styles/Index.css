@@ -1,0 +1,66 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+
+:root {
+  font-family: "Plus Jakarta Sans", Inter, "Segoe UI", Arial, sans-serif;
+  color: #e8ecf8;
+  background: #080b16;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+  background:
+    radial-gradient(900px 480px at 50% -8%, rgba(70, 80, 170, 0.22), transparent 60%),
+    radial-gradient(700px 500px at 100% 0%, rgba(120, 70, 180, 0.14), transparent 55%),
+    radial-gradient(700px 520px at 0% 100%, rgba(0, 212, 200, 0.08), transparent 55%),
+    linear-gradient(180deg, #0a0e1d 0%, #070a14 100%);
+}
+
+button,
+select {
+  font-family: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.background-glow {
+  position: fixed;
+  border-radius: 999px;
+  filter: blur(70px);
+  opacity: 0.32;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.glow-1 {
+  width: 260px;
+  height: 260px;
+  top: 8%;
+  left: 10%;
+  background: #4f7cff;
+}
+
+.glow-2 {
+  width: 240px;
+  height: 240px;
+  bottom: 10%;
+  right: 12%;
+  background: #00d4c8;
+}
