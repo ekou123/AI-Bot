@@ -18,23 +18,174 @@
   --t-purple-dark: #5948ee;
 
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
   color: var(--t-text);
   font-family: "Plus Jakarta Sans", Inter, "Segoe UI", sans-serif;
 
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 330px;
-  gap: 24px;
-
+  display: block;
   padding: 28px;
+}
+
+/* ==================================================================
+   SCALE PRACTICE ADDITIONS
+   Append these rules to the bottom of your existing ViolinTuner.css.
+   Nothing above is changed.
+   ================================================================== */
+
+/* wrap the strings card + scale card in the left column */
+.strings-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.scale-card {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.scale-select select {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 11px;
+  appearance: none;
+  cursor: pointer;
+  background: rgba(20, 26, 48, 0.55);
+  border: 1px solid rgba(120, 135, 190, 0.14);
+  color: var(--t-text);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.scale-select select:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.scale-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.scale-chip {
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 6px 9px;
+  border-radius: 9px;
+  color: var(--t-muted);
+  background: rgba(20, 26, 48, 0.5);
+  border: 1px solid rgba(120, 135, 190, 0.12);
+  transition: all 0.18s ease;
+}
+
+.scale-chip.done {
+  color: var(--t-green);
+  border-color: rgba(70, 224, 138, 0.4);
+  background: rgba(70, 224, 138, 0.08);
+}
+
+.scale-chip.current {
+  color: #fff;
+  border-color: rgba(130, 120, 255, 0.7);
+  background: linear-gradient(
+    135deg,
+    rgba(96, 86, 235, 0.55),
+    rgba(70, 90, 220, 0.4)
+  );
+  box-shadow: 0 0 0 1px rgba(130, 120, 255, 0.3), 0 0 14px rgba(120, 100, 245, 0.4);
+}
+
+.scale-progress-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(20, 26, 48, 0.6);
+  border: 1px solid rgba(120, 135, 190, 0.12);
+}
+
+.scale-progress-fill {
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #46e08a, #39c8e6);
+  box-shadow: 0 0 10px rgba(70, 224, 138, 0.5);
+  transition: width 0.06s linear;
+}
+
+.scale-start-button {
+  height: 48px;
+  border: none;
+  cursor: pointer;
+  border-radius: 13px;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  font-size: 14.5px;
+  background: linear-gradient(180deg, #3fd07f, #1fae66);
+  box-shadow: 0 8px 20px rgba(31, 174, 102, 0.32);
+}
+
+.scale-stop-button {
+  height: 48px;
+  border: 1px solid rgba(240, 177, 78, 0.4);
+  cursor: pointer;
+  border-radius: 13px;
+  color: var(--t-amber);
+  font: inherit;
+  font-weight: 600;
+  font-size: 14.5px;
+  background: rgba(20, 26, 48, 0.5);
+}
+
+.gauge-hold-ring {
+  filter: drop-shadow(0 0 6px rgba(70, 224, 138, 0.6));
+  transition: stroke-dashoffset 0.06s linear;
+}
+
+/* range sliders in the settings panel */
+.range-input {
+  width: 100%;
+  height: 6px;
+  border-radius: 4px;
+  appearance: none;
+  cursor: pointer;
+  background: rgba(120, 135, 190, 0.25);
+  outline: none;
+}
+
+.range-input::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  border: none;
+  box-shadow: 0 0 10px rgba(120, 100, 245, 0.6);
+  cursor: pointer;
+}
+
+.range-input::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  border: none;
+  box-shadow: 0 0 10px rgba(120, 100, 245, 0.6);
+  cursor: pointer;
 }
 
 /* ---------- shared ---------- */
 
 .card,
 .summary-card,
-.gauge-shell,
-.tuner-settings {
+.gauge-shell {
   border: 1px solid var(--t-border);
   background: var(--t-card);
   backdrop-filter: blur(14px);
@@ -75,10 +226,123 @@
   align-items: stretch;
 }
 
+/* ---------- scale type tabs ---------- */
+
+.scale-type-tabs {
+  display: flex;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.22);
+  padding: 4px;
+  border-radius: 11px;
+}
+
+.scale-type-tab {
+  flex: 1;
+  height: 34px;
+  border: none;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  background: transparent;
+  color: var(--t-muted);
+  transition: background 0.18s, color 0.18s;
+}
+
+.scale-type-tab:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.scale-type-tab--major.is-active {
+  background: linear-gradient(135deg, #3a6fff, #5e3fe8);
+  color: #fff;
+}
+
+.scale-type-tab--minor.is-active {
+  background: linear-gradient(135deg, #b04fd6, #7030b8);
+  color: #fff;
+}
+
+/* ---------- scale root grid ---------- */
+
+.scale-root-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.scale-root-btn {
+  height: 42px;
+  border-radius: 9px;
+  border: 1px solid var(--t-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--t-muted);
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.scale-root-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--t-text);
+}
+
+.scale-root-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.scale-root-btn--major.is-active {
+  background: rgba(74, 127, 255, 0.18);
+  border-color: rgba(94, 63, 232, 0.55);
+  color: #8ab0ff;
+}
+
+.scale-root-btn--minor.is-active {
+  background: rgba(176, 79, 214, 0.18);
+  border-color: rgba(176, 79, 214, 0.55);
+  color: #d48ee8;
+}
+
+/* ---------- active scale label ---------- */
+
+.scale-active-label {
+  text-align: center;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  padding: 2px 0;
+}
+
+.scale-active-label--major { color: #8ab0ff; }
+.scale-active-label--minor { color: #d48ee8; }
+
+/* ---------- scale page header ---------- */
+
+.scale-page-header {
+  padding: 8px 2px 16px;
+}
+
+.scale-page-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--t-text);
+  margin: 0 0 4px;
+  letter-spacing: -0.3px;
+}
+
+.scale-page-sub {
+  font-size: 14px;
+  color: var(--t-muted);
+  margin: 0;
+}
+
 /* ---------- strings card ---------- */
 
 .strings-card {
-  min-height: 100%;
   padding: 22px;
   display: flex;
   flex-direction: column;
@@ -360,14 +624,10 @@
 
 .summary-card {
   width: 100%;
-  max-width: 560px;
-  min-height: 92px;
-
   display: grid;
   grid-template-columns: 1fr 1px 1fr 1px 1fr;
   align-items: center;
-
-  padding: 18px 10px;
+  padding: 22px 16px;
   border-radius: 22px;
 }
 
@@ -376,29 +636,89 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 7px;
+  gap: 9px;
   text-align: center;
 }
 
 .summary-label {
-  font-size: 10.5px;
-  letter-spacing: 1.25px;
+  font-size: 11px;
+  letter-spacing: 1.4px;
   color: var(--t-muted2);
   font-weight: 800;
   line-height: 1;
 }
 
 .summary-big {
-  font-size: clamp(19px, 2vw, 24px);
+  font-size: clamp(24px, 2.8vw, 32px);
   font-weight: 800;
-  letter-spacing: -0.4px;
-  line-height: 1.1;
+  letter-spacing: -0.5px;
+  line-height: 1;
 }
 
 .summary-divider {
   width: 1px;
-  height: 46px;
+  height: 52px;
   background: rgba(120, 135, 190, 0.16);
+}
+
+/* ---------- gauge mic controls ---------- */
+
+.gauge-message {
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--t-muted);
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  padding: 2px 0 4px;
+  min-height: 20px;
+}
+
+.gauge-mic-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.gauge-mic-start,
+.gauge-mic-stop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  height: 52px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s, filter 0.15s;
+}
+
+.gauge-mic-start:disabled,
+.gauge-mic-stop:disabled {
+  opacity: 0.32;
+  cursor: default;
+}
+
+.gauge-mic-start {
+  background: linear-gradient(135deg, #4a7fff, #6b4fff);
+  color: #fff;
+}
+
+.gauge-mic-start:not(:disabled):hover {
+  filter: brightness(1.12);
+}
+
+.gauge-mic-stop {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--t-soft-text);
+}
+
+.gauge-mic-stop:not(:disabled):hover {
+  background: rgba(255, 80, 80, 0.18);
+  border-color: rgba(255, 80, 80, 0.35);
+  color: #ff8080;
 }
 
 .summary-status--in-tune,
@@ -470,26 +790,74 @@
   font-size: 14px;
 }
 
-/* ---------- settings panel ---------- */
+/* ---------- settings backdrop ---------- */
+
+.settings-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 10, 0.5);
+  z-index: 199;
+  animation: backdropIn 0.22s ease forwards;
+}
+
+@keyframes backdropIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ---------- settings gear button ---------- */
+
+.settings-open-btn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 14px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  color: var(--t-soft-text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.settings-open-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--t-text);
+}
+
+/* ---------- settings drawer ---------- */
 
 .tuner-settings {
-  width: 330px;
-  min-height: calc(100vh - 56px);
-  max-height: calc(100vh - 56px);
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 320px;
+  z-index: 200;
 
-  position: sticky;
-  top: 28px;
+  padding: 24px 22px;
+  overflow-y: auto;
 
-  border-radius: 26px;
-  padding: 22px 22px;
-  overflow: auto;
+  border-left: 1px solid var(--t-border-strong);
+  border-radius: 0;
 
   background:
-    linear-gradient(180deg, rgba(18, 24, 47, 0.76), rgba(10, 14, 28, 0.74)),
-    rgba(12, 16, 32, 0.7);
+    linear-gradient(180deg, rgba(14, 19, 40, 0.97), rgba(8, 11, 24, 0.97));
 
   display: flex;
   flex-direction: column;
+
+  transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tuner-settings.is-open {
+  transform: translateX(0);
 }
 
 .settings-head {
@@ -696,14 +1064,14 @@
 
 @media (max-width: 1220px) {
   .tuner-screen {
-    grid-template-columns: 1fr;
+    height: auto;
+    min-height: 100%;
   }
+}
 
+@media (max-width: 480px) {
   .tuner-settings {
     width: 100%;
-    min-height: auto;
-    max-height: none;
-    position: static;
   }
 }
 
@@ -740,6 +1108,20 @@
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 22px;
+}
+
+/* stop wrapping and let it scroll on tight screens */
+@media (max-width: 700px) {
+  .instrument-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 6px;
+    margin-bottom: 16px;
+  }
+  .instrument-tabs::-webkit-scrollbar { display: none; }
+  .instrument-tab { flex-shrink: 0; }
 }
 
 .instrument-tab {
@@ -787,8 +1169,7 @@
   }
 
   .strings-card,
-  .drone-card,
-  .tuner-settings {
+  .drone-card {
     border-radius: 20px;
   }
 
@@ -818,6 +1199,89 @@
   .drone-play-button {
     width: 100%;
     justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .tuner-screen {
+    padding: 10px;
+    gap: 14px;
+  }
+
+  .tuner-main {
+    gap: 12px;
+  }
+
+  .strings-card {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .scale-card {
+    padding: 16px;
+    gap: 10px;
+  }
+
+  .string-button {
+    height: 48px;
+    padding: 0 13px;
+  }
+
+  .string-name {
+    font-size: 14px;
+  }
+
+  .string-hz {
+    font-size: 12px;
+  }
+
+  .auto-detect-button {
+    height: 44px;
+    font-size: 13px;
+  }
+
+  .mic-start,
+  .mic-stop {
+    height: 38px;
+    font-size: 12px;
+  }
+
+  .drone-card {
+    padding: 16px 18px;
+    gap: 12px;
+  }
+
+  .drone-icon {
+    width: 46px;
+    height: 46px;
+  }
+
+  .drone-frequency {
+    font-size: 22px;
+  }
+
+  .gauge-note {
+    font-size: clamp(44px, 12vw, 64px);
+  }
+
+  .gauge-frequency {
+    font-size: clamp(16px, 4vw, 22px);
+  }
+
+  .summary-label {
+    font-size: 9.5px;
+  }
+
+  .summary-big {
+    font-size: clamp(20px, 5vw, 26px);
+  }
+
+  .settings-head h2 {
+    font-size: 18px;
+  }
+
+  .card-title {
+    font-size: 11px;
   }
 }
 

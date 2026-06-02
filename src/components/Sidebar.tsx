@@ -67,6 +67,7 @@ const NAV_ITEMS = [
   { icon: "🏠", label: "Home" },
   { icon: "💬", label: "Chats" },
   { icon: "🎻", label: "Tuner" },
+  { icon: "🎵", label: "Scales" },
   { icon: "⚖️", label: "Compare AI" },
   { icon: "🤖", label: "Agents" },
   { icon: "📦", label: "Workspaces" },

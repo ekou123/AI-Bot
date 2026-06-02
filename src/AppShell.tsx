@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Sidebar } from "./components/Sidebar";
 import { ViolinTuner } from "./components/ViolinTuner";
+import { ScalePractice } from "./components/ScalePractice";
 import { createBot, type SavedChat } from "./lib/providers/types";
 import type { ChatUpdatePayload } from "./ChatWindow";
 import { listen, emit } from "@tauri-apps/api/event";
@@ -147,6 +148,8 @@ export function AppShell() {
         <div className="workspace">
           {activePanel === "Tuner" ? (
             <ViolinTuner />
+          ) : activePanel === "Scales" ? (
+            <ScalePractice />
           ) : (
             <MainCanvas
               savedChats={savedChats}

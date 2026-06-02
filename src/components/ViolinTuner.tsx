@@ -153,6 +153,7 @@ export function ViolinTuner() {
   const [pitchDetectionMode, setPitchDetectionMode] = useState<string>("Default");
   const [showNoteNames, setShowNoteNames] = useState<boolean>(true);
   const [showCenterIndicator, setShowCenterIndicator] = useState<boolean>(true);
+  const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
 
   const smoothedPitchRef = useRef<number | null>(null);
   const lastStrongSignalTimeRef = useRef<number>(0);
@@ -382,8 +383,8 @@ export function ViolinTuner() {
           ? "Locking in..."
           : `${nextStatus} by ${formatCents(centsDiff)}`
       );
-      setAdvice(getTuningAdvice(centsDiff));
       updateBeat(centsDiff);
+      setAdvice(getTuningAdvice(centsDiff));
     } else {
       const elapsed = performance.now() - lastStrongSignalTimeRef.current;
       if (elapsed > NO_SIGNAL_DELAY_MS) {
@@ -439,9 +440,7 @@ export function ViolinTuner() {
 
   const stopDrone = () => {
     if (droneOscRef.current) {
-      try {
-        droneOscRef.current.stop();
-      } catch {}
+      try { droneOscRef.current.stop(); } catch {}
       droneOscRef.current.disconnect();
       droneOscRef.current = null;
     }
@@ -477,7 +476,7 @@ export function ViolinTuner() {
     setDroneOn(true);
   };
 
-  // keep the live drone pitch synced to the selected string
+  // keep the live drone pitch synced to selected note
   useEffect(() => {
     if (droneOscRef.current && droneCtxRef.current) {
       droneOscRef.current.frequency.setValueAtTime(
@@ -506,79 +505,71 @@ export function ViolinTuner() {
 
   return (
     <section className="tuner-screen">
-      
+
+      {settingsOpen && (
+        <div className="settings-backdrop" onClick={() => setSettingsOpen(false)} />
+      )}
+
       <div className="tuner-main">
         <div className="instrument-tabs">
-    {(Object.keys(INSTRUMENT_PRESETS) as Array<keyof typeof INSTRUMENT_PRESETS>).map(
-      (instrument) => (
-        <button
-          key={instrument}
-          type="button"
-          className={`instrument-tab ${
-            selectedInstrument === instrument ? "is-active" : ""
-          }`}
-          onClick={() => {
-            setSelectedInstrument(instrument);
-            setSelectedNoteName(INSTRUMENT_PRESETS[instrument][0].name);
-          }}
-        >
-          {instrument}
-        </button>
-      )
-    )}
-  </div>
+          {(Object.keys(INSTRUMENT_PRESETS) as Array<keyof typeof INSTRUMENT_PRESETS>).map(
+            (instrument) => (
+              <button
+                key={instrument}
+                type="button"
+                className={`instrument-tab ${
+                  selectedInstrument === instrument ? "is-active" : ""
+                }`}
+                onClick={() => {
+                  setSelectedInstrument(instrument);
+                  setSelectedNoteName(INSTRUMENT_PRESETS[instrument][0].name);
+                }}
+              >
+                {instrument}
+              </button>
+            )
+          )}
+          <button
+            type="button"
+            className="settings-open-btn"
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Open settings"
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+            Settings
+          </button>
+        </div>
         <div className="tuner-cols">
           {/* STRINGS */}
-          <div className="card strings-card">
-            <div className="card-title">STRINGS</div>
+          <div className="strings-col">
+            <div className="card strings-card">
+              <div className="card-title">STRINGS</div>
 
-            <div className="string-list">
-              {currentNotes.map((note) => (
-                <button
-                  key={note.name}
-                  type="button"
-                  className={`string-button ${
-                    note.name === selectedNote.name ? "selected" : ""
-                  }`}
-                  onClick={() => setSelectedNoteName(note.name)}
-                >
-                  <span className="string-name">{note.name}</span>
-                  <span className="string-hz">{note.frequency.toFixed(2)} Hz</span>
-                </button>
-              ))}
-            </div>
+              <div className="string-list">
+                {currentNotes.map((note) => (
+                  <button
+                    key={note.name}
+                    type="button"
+                    className={`string-button ${
+                      note.name === selectedNote.name ? "selected" : ""
+                    }`}
+                    onClick={() => setSelectedNoteName(note.name)}
+                  >
+                    <span className="string-name">{note.name}</span>
+                    <span className="string-hz">{note.frequency.toFixed(2)} Hz</span>
+                  </button>
+                ))}
+              </div>
 
-            <button
-              type="button"
-              className="auto-detect-button"
-              onClick={autoDetectString}
-            >
-              Auto Detect
-            </button>
-
-            <div className="panel-status">
-              <span className={`status-dot status-dot--${statusClass}`} />
-              <span className="panel-status-text">
-                {status === "idle" ? "Ready" : message}
-              </span>
-            </div>
-
-            <div className="mic-controls">
               <button
                 type="button"
-                className="mic-start"
-                onClick={startAudio}
-                disabled={isActive}
+                className="auto-detect-button"
+                onClick={autoDetectString}
               >
-                Start Mic
-              </button>
-              <button
-                type="button"
-                className="mic-stop"
-                onClick={stopTuner}
-                disabled={!isActive}
-              >
-                Stop
+                Auto Detect
               </button>
             </div>
           </div>
@@ -686,6 +677,36 @@ export function ViolinTuner() {
                 </strong>
               </div>
             </div>
+
+            <div className="gauge-message">{status === "idle" ? "Ready — press Start Mic to begin" : message}</div>
+
+            <div className="gauge-mic-controls">
+              <button
+                type="button"
+                className="gauge-mic-start"
+                onClick={startAudio}
+                disabled={isActive}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                  <line x1="12" y1="19" x2="12" y2="23" />
+                  <line x1="8" y1="23" x2="16" y2="23" />
+                </svg>
+                Start Mic
+              </button>
+              <button
+                type="button"
+                className="gauge-mic-stop"
+                onClick={stopTuner}
+                disabled={!isActive}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="5" y="5" width="14" height="14" rx="2" />
+                </svg>
+                Stop
+              </button>
+            </div>
           </div>
         </div>
 
@@ -716,11 +737,11 @@ export function ViolinTuner() {
         </div>
       </div>
 
-      {/* SETTINGS PANEL */}
-      <aside className="tuner-settings">
+      {/* SETTINGS DRAWER */}
+      <aside className={`tuner-settings${settingsOpen ? " is-open" : ""}`}>
         <div className="settings-head">
           <h2>Tuner Settings</h2>
-          <button type="button" className="settings-close" aria-label="Close">
+          <button type="button" className="settings-close" aria-label="Close" onClick={() => setSettingsOpen(false)}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
