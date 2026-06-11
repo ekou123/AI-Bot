@@ -80,10 +80,9 @@ function buildScale(key: KeyDef, type: ScaleType, calibrationRatio: number): Sca
 /*  Audio / pitch detection constants                                 */
 /* ------------------------------------------------------------------ */
 
-const MIN_CLARITY = 0.6;
-const MIN_VOLUME_RMS = 0.015;
 const PITCH_SMOOTHING = 0.25;
 const NO_SIGNAL_DELAY_MS = 500;
+const STRICT_RESET_MS = 2000;
 
 const getNoteFromFrequency = (f: number | null) => {
   if (!f || f <= 0) return "—";
@@ -137,20 +136,37 @@ export function ScalePractice() {
   const [scaleIndex, setScaleIndex] = useState(0);
   const [holdProgress, setHoldProgress] = useState(0);
   const [holdMs, setHoldMs] = useState(700);
+  const [sensitivity, setSensitivity] = useState(5);
   const [isActive, setIsActive] = useState(false);
   const [scaleMode, setScaleMode] = useState(false);
   const [detectedPitch, setDetectedPitch] = useState<number | null>(null);
   const [cents, setCents] = useState<number | null>(null);
   const [status, setStatus] = useState("idle");
   const [message, setMessage] = useState("Select a scale and press Start.");
+  const [tolerance, setTolerance] = useState(20);
+  const [clarity, setClarity] = useState(0.6);
+  const [scaleDirection, setScaleDirection] = useState<"up" | "up-down">("up");
+  const [autoRestart, setAutoRestart] = useState(false);
+  const [strictMode, setStrictMode] = useState(false);
+  const [isReplaying, setIsReplaying] = useState(false);
+  const [replayIndex, setReplayIndex] = useState(-1);
+  const [resetFlash, setResetFlash] = useState(false);
 
   const scaleModeRef = useRef(false);
   const scaleIndexRef = useRef(0);
   const scaleStepsRef = useRef<ScaleStep[]>([]);
   const holdMsRef = useRef(700);
+  const minVolumeRef = useRef(0.015);
   const inTuneRef = useRef<number | null>(null);
   const smoothedRef = useRef<number | null>(null);
   const lastSignalRef = useRef(0);
+  const toleranceRef = useRef(20);
+  const clarityRef = useRef(0.6);
+  const autoRestartRef = useRef(false);
+  const strictModeRef = useRef(false);
+  const strictResetFiredRef = useRef(false);
+  const replayTimeoutsRef = useRef<number[]>([]);
+  const replayCtxRef = useRef<AudioContext | null>(null);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -165,15 +181,26 @@ export function ScalePractice() {
     [activeKeys, scaleRoot]
   );
 
-  const scaleSteps = useMemo(
-    () => buildScale(activeKey, scaleType, calibrationHz / 440),
-    [activeKey, scaleType, calibrationHz]
-  );
+  const scaleSteps = useMemo(() => {
+    const ascending = buildScale(activeKey, scaleType, calibrationHz / 440);
+    if (scaleDirection === "up-down") {
+      const descending = ascending.slice(0, ascending.length - 1).reverse();
+      return [...ascending, ...descending];
+    }
+    return ascending;
+  }, [activeKey, scaleType, calibrationHz, scaleDirection]);
 
   useEffect(() => { scaleModeRef.current = scaleMode; }, [scaleMode]);
   useEffect(() => { scaleIndexRef.current = scaleIndex; }, [scaleIndex]);
   useEffect(() => { scaleStepsRef.current = scaleSteps; }, [scaleSteps]);
   useEffect(() => { holdMsRef.current = holdMs; }, [holdMs]);
+  useEffect(() => { toleranceRef.current = tolerance; }, [tolerance]);
+  useEffect(() => { clarityRef.current = clarity; }, [clarity]);
+  useEffect(() => { autoRestartRef.current = autoRestart; }, [autoRestart]);
+  useEffect(() => { strictModeRef.current = strictMode; }, [strictMode]);
+  useEffect(() => {
+    minVolumeRef.current = 0.06 * Math.pow(0.05, (sensitivity - 1) / 9);
+  }, [sensitivity]);
 
   const detector = useMemo(
     () => new PitchDetector(2048, (len: number) => new Float32Array(len)),
@@ -218,7 +245,9 @@ export function ScalePractice() {
     if (!steps.length) return;
     const target = steps[Math.min(scaleIndexRef.current, steps.length - 1)];
     const detClass = ((Math.round(69 + 12 * Math.log2(hz / 440)) % 12) + 12) % 12;
-    const onPitch = detClass === toPitchClass(target.name);
+    const octShift = Math.round(Math.log2(hz / target.frequency));
+    const absCents = Math.abs(1200 * Math.log2(hz / (target.frequency * Math.pow(2, octShift))));
+    const onPitch = detClass === toPitchClass(target.name) && absCents <= toleranceRef.current;
 
     if (onPitch) {
       if (inTuneRef.current === null) inTuneRef.current = performance.now();
@@ -230,10 +259,17 @@ export function ScalePractice() {
         const next = scaleIndexRef.current + 1;
         if (next >= steps.length) {
           playChime([523, 659, 784], 0.12);
-          setScaleMode(false);
-          scaleModeRef.current = false;
-          setMessage("Scale complete!");
-          setStatus("idle");
+          if (autoRestartRef.current) {
+            scaleIndexRef.current = 0;
+            setScaleIndex(0);
+            inTuneRef.current = null;
+            setMessage(`Play ${steps[0].name}`);
+          } else {
+            setScaleMode(false);
+            scaleModeRef.current = false;
+            setMessage("Scale complete!");
+            setStatus("idle");
+          }
         } else {
           playChime([660, 990]);
           scaleIndexRef.current = next;
@@ -255,10 +291,11 @@ export function ScalePractice() {
 
     analyser.getFloatTimeDomainData(buf as any);
     const rms = getRms(buf);
-    const [raw, clarity] = detector.findPitch(buf as any, ctx.sampleRate);
-    const strong = raw > 0 && clarity >= MIN_CLARITY && rms >= MIN_VOLUME_RMS;
+    const [raw, pitchClarity] = detector.findPitch(buf as any, ctx.sampleRate);
+    const strong = raw > 0 && pitchClarity >= clarityRef.current && rms >= minVolumeRef.current;
 
     if (strong) {
+      strictResetFiredRef.current = false;
       lastSignalRef.current = performance.now();
       const prev = smoothedRef.current;
       const smoothed = prev === null ? raw : prev + (raw - prev) * PITCH_SMOOTHING;
@@ -268,7 +305,8 @@ export function ScalePractice() {
       if (scaleModeRef.current) {
         const steps = scaleStepsRef.current;
         const target = steps[Math.min(scaleIndexRef.current, steps.length - 1)];
-        const c = 1200 * Math.log2(smoothed / target.frequency);
+        const octaveShift = Math.round(Math.log2(smoothed / target.frequency));
+        const c = 1200 * Math.log2(smoothed / (target.frequency * Math.pow(2, octaveShift)));
         setCents(c);
         setStatus(Math.abs(c) <= 5 ? "in tune" : c > 0 ? "sharp" : "flat");
         updateScale(smoothed);
@@ -288,6 +326,18 @@ export function ScalePractice() {
         setCents(null);
         setStatus("no signal");
         if (scaleModeRef.current) {
+          if (
+            strictModeRef.current &&
+            scaleIndexRef.current > 0 &&
+            elapsed > STRICT_RESET_MS &&
+            !strictResetFiredRef.current
+          ) {
+            strictResetFiredRef.current = true;
+            scaleIndexRef.current = 0;
+            setScaleIndex(0);
+            setResetFlash(true);
+            window.setTimeout(() => setResetFlash(false), 800);
+          }
           const steps = scaleStepsRef.current;
           const target = steps[Math.min(scaleIndexRef.current, steps.length - 1)];
           if (target) setMessage(`Play ${target.name}`);
@@ -354,8 +404,53 @@ export function ScalePractice() {
     setIsActive(false);
   };
 
+  const stopReplay = () => {
+    replayTimeoutsRef.current.forEach(id => window.clearTimeout(id));
+    replayTimeoutsRef.current = [];
+    if (replayCtxRef.current) {
+      replayCtxRef.current.close();
+      replayCtxRef.current = null;
+    }
+    setIsReplaying(false);
+    setReplayIndex(-1);
+  };
+
+  const replayScale = () => {
+    if (isReplaying) { stopReplay(); return; }
+    const steps = scaleSteps;
+    if (!steps.length) return;
+    const ctx = new AudioContext();
+    replayCtxRef.current = ctx;
+    setIsReplaying(true);
+    const noteDuration = Math.max(holdMs, 700);
+    steps.forEach((step, i) => {
+      const id = window.setTimeout(() => {
+        setReplayIndex(i);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const now = ctx.currentTime;
+        osc.type = "sine";
+        osc.frequency.value = step.frequency;
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(0.10, now + 0.05);
+        gain.gain.linearRampToValueAtTime(0.10, now + noteDuration / 1000 - 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + noteDuration / 1000);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + noteDuration / 1000);
+        osc.onended = () => { osc.disconnect(); gain.disconnect(); };
+      }, i * noteDuration);
+      replayTimeoutsRef.current.push(id);
+    });
+    replayTimeoutsRef.current.push(
+      window.setTimeout(() => stopReplay(), steps.length * noteDuration + 200)
+    );
+  };
+
   const handleTypeChange = (type: ScaleType) => {
     if (scaleMode) return;
+    stopReplay();
     const keys = type === "major" ? MAJOR_KEYS : MINOR_KEYS;
     if (!keys.find(k => k.root === scaleRoot)) setScaleRoot(keys[0].root);
     setScaleType(type);
@@ -365,12 +460,13 @@ export function ScalePractice() {
 
   const handleRootChange = (root: string) => {
     if (scaleMode) return;
+    stopReplay();
     setScaleRoot(root);
     setScaleIndex(0);
     setHoldProgress(0);
   };
 
-  useEffect(() => { return () => { stopAudio(); }; }, []);
+  useEffect(() => { return () => { stopAudio(); stopReplay(); }; }, []);
 
   /* ---- gauge ---- */
   const needleDeg = Math.max(-150, Math.min(150, (cents ?? 0) * 1.4));
@@ -433,12 +529,31 @@ export function ScalePractice() {
                 {activeKey.root}&nbsp;{scaleType === "major" ? "Major" : "Minor"}
               </div>
 
+              {/* Direction toggle */}
+              <div className="scale-type-tabs">
+                <button
+                  className={`scale-type-tab scale-type-tab--major${scaleDirection === "up" ? " is-active" : ""}`}
+                  onClick={() => { if (!scaleMode) setScaleDirection("up"); }}
+                  disabled={scaleMode}
+                >
+                  Ascending
+                </button>
+                <button
+                  className={`scale-type-tab scale-type-tab--minor${scaleDirection === "up-down" ? " is-active" : ""}`}
+                  onClick={() => { if (!scaleMode) setScaleDirection("up-down"); }}
+                  disabled={scaleMode}
+                >
+                  Asc &amp; Desc
+                </button>
+              </div>
+
               {/* Note chips — no octave numbers */}
-              <div className="scale-notes">
+              <div className={`scale-notes${resetFlash ? " scale-notes--reset" : ""}`}>
                 {scaleSteps.map((step, i) => (
                   <span
                     key={step.name + i}
                     className={`scale-chip${
+                      isReplaying && i === replayIndex ? " replaying" :
                       scaleMode && i === scaleIndex ? " current" :
                       scaleMode && i < scaleIndex ? " done" : ""
                     }`}
@@ -461,9 +576,19 @@ export function ScalePractice() {
 
               {/* Start / Stop */}
               {!scaleMode
-                ? <button type="button" className="scale-start-button" onClick={startScale}>Start Scale</button>
+                ? <button type="button" className="scale-start-button" onClick={startScale} disabled={isReplaying}>Start Scale</button>
                 : <button type="button" className="scale-stop-button" onClick={stopScale}>Stop Scale</button>
               }
+
+              {/* Preview */}
+              <button
+                type="button"
+                className={`scale-preview-button${isReplaying ? " is-active" : ""}`}
+                onClick={replayScale}
+                disabled={scaleMode}
+              >
+                {isReplaying ? "Stop Preview" : "Preview Scale"}
+              </button>
             </div>
 
             {/* Settings */}
@@ -487,6 +612,69 @@ export function ScalePractice() {
                 <label>Hold Time: {holdMs} ms</label>
                 <input type="range" min={300} max={1500} step={100} value={holdMs}
                   onChange={e => setHoldMs(Number(e.target.value))} className="range-input" />
+              </div>
+              <div className="field">
+                <label>
+                  Detection Clarity:&nbsp;
+                  <span className="sensitivity-label">{clarity.toFixed(2)}</span>
+                </label>
+                <input type="range" min={0.4} max={0.8} step={0.05} value={clarity}
+                  onChange={e => setClarity(Number(e.target.value))} className="range-input" />
+                <div className="sensitivity-hints">
+                  <span>Loose</span><span>Strict</span>
+                </div>
+              </div>
+              <div className="field">
+                <label>
+                  Tuning Tolerance:&nbsp;
+                  <span className="sensitivity-label">±{tolerance}¢</span>
+                </label>
+                <input type="range" min={5} max={50} step={5} value={tolerance}
+                  onChange={e => setTolerance(Number(e.target.value))} className="range-input" />
+                <div className="sensitivity-hints">
+                  <span>Strict</span><span>Relaxed</span>
+                </div>
+              </div>
+              <div className="toggle-row">
+                <div>
+                  <span className="toggle-label">Auto Restart</span>
+                  <div className="toggle-sub">Loops the scale when complete</div>
+                </div>
+                <button
+                  type="button"
+                  className={`toggle${autoRestart ? " on" : ""}`}
+                  onClick={() => setAutoRestart(v => !v)}
+                >
+                  <span className="toggle-knob" />
+                </button>
+              </div>
+              <div className="toggle-row">
+                <div>
+                  <span className="toggle-label">Strict Mode</span>
+                  <div className="toggle-sub">Resets the scale if you pause for 2 s</div>
+                </div>
+                <button
+                  type="button"
+                  className={`toggle${strictMode ? " on" : ""}`}
+                  onClick={() => setStrictMode(v => !v)}
+                >
+                  <span className="toggle-knob" />
+                </button>
+              </div>
+              <div className="field">
+                <label>
+                  Mic Sensitivity:&nbsp;
+                  <span className="sensitivity-label">
+                    {sensitivity <= 3 ? "Low" : sensitivity <= 6 ? "Medium" : "High"}
+                  </span>
+                </label>
+                <div className="sensitivity-track-wrap">
+                  <input type="range" min={1} max={10} step={1} value={sensitivity}
+                    onChange={e => setSensitivity(Number(e.target.value))} className="range-input" />
+                  <div className="sensitivity-hints">
+                    <span>Quieter</span><span>Louder</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

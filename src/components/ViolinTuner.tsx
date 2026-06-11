@@ -64,8 +64,6 @@ const NOTE_NAMES = [
   "C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B",
 ];
 
-const MIN_CLARITY = 0.6;
-const MIN_VOLUME_RMS = 0.015;
 const PITCH_SMOOTHING = 0.25;
 const NO_SIGNAL_DELAY_MS = 500;
 
@@ -154,7 +152,12 @@ export function ViolinTuner() {
   const [showNoteNames, setShowNoteNames] = useState<boolean>(true);
   const [showCenterIndicator, setShowCenterIndicator] = useState<boolean>(true);
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
+  const [sensitivity, setSensitivity] = useState<number>(5);
+  const [clarity, setClarity] = useState<number>(0.6);
+  const [autoDetect, setAutoDetect] = useState<boolean>(false);
 
+  const minVolumeRef = useRef<number>(0.015);
+  const clarityRef = useRef<number>(0.6);
   const smoothedPitchRef = useRef<number | null>(null);
   const lastStrongSignalTimeRef = useRef<number>(0);
 
@@ -201,6 +204,26 @@ export function ViolinTuner() {
     [currentNotes, selectedNoteName]
   );
 
+  const selectedNoteRef = useRef(selectedNote);
+  useEffect(() => { selectedNoteRef.current = selectedNote; }, [selectedNote]);
+
+  const autoDetectRef = useRef(false);
+  useEffect(() => { autoDetectRef.current = autoDetect; }, [autoDetect]);
+
+  const currentNotesRef = useRef(currentNotes);
+  useEffect(() => { currentNotesRef.current = currentNotes; }, [currentNotes]);
+
+  const nearestNote = useMemo(() => {
+    if (!detectedPitch) return null;
+    return currentNotes.reduce(
+      (best, note) => {
+        const diff = Math.abs(1200 * Math.log2(detectedPitch / note.frequency));
+        return diff < best.diff ? { note, diff } : best;
+      },
+      { note: currentNotes[0], diff: Infinity as number }
+    ).note;
+  }, [detectedPitch, currentNotes]);
+
   const detectedActualNote = useMemo(
     () => getNoteFromFrequency(detectedPitch),
     [detectedPitch]
@@ -225,6 +248,12 @@ export function ViolinTuner() {
     [selectedNoteName]
   );
 
+  useEffect(() => {
+    minVolumeRef.current = 0.06 * Math.pow(0.05, (sensitivity - 1) / 9);
+  }, [sensitivity]);
+
+  useEffect(() => { clarityRef.current = clarity; }, [clarity]);
+
   const clearTapFeedback = () => {
     if (tapIntervalRef.current !== null) {
       window.clearInterval(tapIntervalRef.current);
@@ -234,21 +263,6 @@ export function ViolinTuner() {
     lastTapSideRef.current = null;
   };
 
-  const autoDetectString = () => {
-    if (!detectedPitch) {
-      setMessage("Play a string first to auto-detect.");
-      return;
-    }
-    const nearest = currentNotes.reduce(
-      (closest, note) => {
-        const diff = Math.abs(1200 * Math.log2(detectedPitch / note.frequency));
-        return diff < closest.diff ? { note, diff } : closest;
-      },
-      { note: currentNotes[0], diff: Infinity as number }
-    ).note;
-    setSelectedNoteName(nearest.name);
-    setMessage(`Auto-detected ${nearest.name}.`);
-  };
 
   const stopAudio = () => {
     if (rafRef.current !== null) {
@@ -362,7 +376,7 @@ export function ViolinTuner() {
     );
 
     const hasStrongSignal =
-      rawPitch > 0 && clarityValue >= MIN_CLARITY && rmsVolume >= MIN_VOLUME_RMS;
+      rawPitch > 0 && clarityValue >= clarityRef.current && rmsVolume >= minVolumeRef.current;
 
     if (hasStrongSignal) {
       lastStrongSignalTimeRef.current = performance.now();
@@ -373,7 +387,22 @@ export function ViolinTuner() {
           : previousPitch + (rawPitch - previousPitch) * PITCH_SMOOTHING;
       smoothedPitchRef.current = smoothedPitch;
 
-      const centsDiff = 1200 * Math.log2(smoothedPitch / selectedNote.frequency);
+      if (autoDetectRef.current) {
+        const notes = currentNotesRef.current;
+        const nearest = notes.reduce(
+          (best, note) => {
+            const diff = Math.abs(1200 * Math.log2(smoothedPitch / note.frequency));
+            return diff < best.diff ? { note, diff } : best;
+          },
+          { note: notes[0], diff: Infinity }
+        ).note;
+        if (nearest.name !== selectedNoteRef.current.name) {
+          selectedNoteRef.current = nearest;
+          setSelectedNoteName(nearest.name);
+        }
+      }
+
+      const centsDiff = 1200 * Math.log2(smoothedPitch / selectedNoteRef.current.frequency);
       const nextStatus = getStatus(centsDiff);
       setDetectedPitch(smoothedPitch);
       setCents(centsDiff);
@@ -554,22 +583,27 @@ export function ViolinTuner() {
                     key={note.name}
                     type="button"
                     className={`string-button ${
-                      note.name === selectedNote.name ? "selected" : ""
+                      note.name === selectedNote.name ? "selected" :
+                      nearestNote?.name === note.name ? "nearest" : ""
                     }`}
-                    onClick={() => setSelectedNoteName(note.name)}
+                    onClick={() => { setAutoDetect(false); setSelectedNoteName(note.name); }}
                   >
                     <span className="string-name">{note.name}</span>
-                    <span className="string-hz">{note.frequency.toFixed(2)} Hz</span>
+                    <span className="string-hz">
+                      {nearestNote?.name === note.name && detectedPitch
+                        ? `${detectedPitch.toFixed(1)} Hz`
+                        : `${note.frequency.toFixed(2)} Hz`}
+                    </span>
                   </button>
                 ))}
               </div>
 
               <button
                 type="button"
-                className="auto-detect-button"
-                onClick={autoDetectString}
+                className={`auto-detect-button${autoDetect ? " is-active" : ""}`}
+                onClick={() => setAutoDetect(v => !v)}
               >
-                Auto Detect
+                {autoDetect ? "Auto: ON" : "Auto Detect"}
               </button>
             </div>
           </div>
@@ -799,6 +833,38 @@ export function ViolinTuner() {
 
         <div className="settings-divider" />
 
+        <div className="field">
+          <label>
+            Mic Sensitivity:&nbsp;
+            <span className="sensitivity-label">
+              {sensitivity <= 3 ? "Low" : sensitivity <= 6 ? "Medium" : "High"}
+            </span>
+          </label>
+          <div className="sensitivity-track-wrap">
+            <input type="range" min={1} max={10} step={1} value={sensitivity}
+              onChange={e => setSensitivity(Number(e.target.value))} className="range-input" />
+            <div className="sensitivity-hints">
+              <span>Quieter</span><span>Louder</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="field">
+          <label>
+            Detection Clarity:&nbsp;
+            <span className="sensitivity-label">{clarity.toFixed(2)}</span>
+          </label>
+          <div className="sensitivity-track-wrap">
+            <input type="range" min={0.4} max={0.8} step={0.05} value={clarity}
+              onChange={e => setClarity(Number(e.target.value))} className="range-input" />
+            <div className="sensitivity-hints">
+              <span>Loose</span><span>Strict</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="settings-divider" />
+
         <div className="settings-section-title">Advanced</div>
 
         <div className="field">
@@ -852,6 +918,8 @@ export function ViolinTuner() {
             setPitchDetectionMode("Default");
             setShowNoteNames(true);
             setShowCenterIndicator(true);
+            setSensitivity(5);
+            setClarity(0.6);
           }}
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
